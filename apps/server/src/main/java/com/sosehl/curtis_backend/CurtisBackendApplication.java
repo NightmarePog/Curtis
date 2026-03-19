@@ -1,5 +1,6 @@
 package com.sosehl.curtis_backend;
 
+import com.sosehl.curtis_backend.components.MSLogin;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.GetMapping;
