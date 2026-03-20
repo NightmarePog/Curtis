@@ -6,8 +6,10 @@ import lombok.Data;
 
 @Data
 public class AnswersDto {
+
     @NotBlank
     private String uuid;
+
     @NotBlank
     @Size(min = 1)
     private String answer;

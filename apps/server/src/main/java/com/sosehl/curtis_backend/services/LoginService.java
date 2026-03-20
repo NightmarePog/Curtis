@@ -1,7 +1,6 @@
 package com.sosehl.curtis_backend.services;
 
 import com.sosehl.curtis_backend.components.MSLogin;
-import java.io.ObjectInputFilter.Config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;

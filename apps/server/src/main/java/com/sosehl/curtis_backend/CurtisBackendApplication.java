@@ -1,8 +1,11 @@
 package com.sosehl.curtis_backend;
 
-import com.sosehl.curtis_backend.components.MSLogin;
+import java.util.Properties;
+import javax.sql.DataSource;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,7 +15,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class CurtisBackendApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(CurtisBackendApplication.class, args);
+        SpringApplication app = new SpringApplication(
+            CurtisBackendApplication.class
+        );
+
+        Properties props = new Properties();
+        props.setProperty(
+            "spring.datasource.url",
+            "jdbc:postgresql://localhost:5432/curtisdb"
+        );
+        props.setProperty("spring.datasource.username", "curtisuser");
+        props.setProperty("spring.datasource.password", "curtispass");
+        props.setProperty(
+            "spring.datasource.driver-class-name",
+            "org.postgresql.Driver"
+        );
+        props.setProperty("spring.jpa.hibernate.ddl-auto", "update");
+
+        app.setDefaultProperties(props);
+        app.run(args);
     }
 
     @GetMapping("/hello")

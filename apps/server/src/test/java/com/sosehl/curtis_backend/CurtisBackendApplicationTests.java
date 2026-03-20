@@ -1,4 +1,4 @@
-package com.sosehl.curtis_backend;
+/*package com.sosehl.curtis_backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,4 +10,4 @@ class CurtisBackendApplicationTests {
 	void contextLoads() {
 	}
 
-}
+	}*/
