@@ -18,7 +18,7 @@ public class QuestionDto {
 
     @NotEmpty(message = "Musíte zadat možné odpovědi")
     @Valid
-    private List<AnswersDto> possibleAnswers;
+    private List<String> possibleAnswers;
 
     @NotEmpty(message = "Musíte zadat alespoň jednu správnou odpověď")
     private List<Integer> answersId;

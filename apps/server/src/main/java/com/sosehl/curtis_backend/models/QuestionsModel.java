@@ -13,12 +13,15 @@ public class QuestionsModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
+    private String question;
 
-    @OneToMany(
-        mappedBy = "question",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    private List<AnswersModel> answers;
+    @ElementCollection
+    private List<Integer> correctAnswers;
+
+    @ElementCollection
+    private List<String> answers;
+
+    @ManyToOne
+    @JoinColumn(name = "quiz_id")
+    private QuizModel quiz;
 }

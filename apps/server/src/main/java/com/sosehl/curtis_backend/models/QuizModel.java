@@ -1,15 +1,12 @@
 package com.sosehl.curtis_backend.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.util.List;
 import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "Quizzes")
+@Table(name = "quizzes")
 public class QuizModel {
 
     @Id
@@ -19,4 +16,7 @@ public class QuizModel {
     private String title;
 
     private String description;
+
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
+    private List<QuestionsModel> questions;
 }
