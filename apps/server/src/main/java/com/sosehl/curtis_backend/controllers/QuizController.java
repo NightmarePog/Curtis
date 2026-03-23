@@ -1,9 +1,17 @@
 package com.sosehl.curtis_backend.controllers;
 
-import com.sosehl.curtis_backend.dto.QuizCreateRequest;
+import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
+import com.sosehl.curtis_backend.dto.response.QuizGetResponse;
+import com.sosehl.curtis_backend.models.QuizModel;
 import com.sosehl.curtis_backend.services.QuizService;
 import jakarta.validation.Valid;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,16 +21,35 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/quiz")
 class QuizController {
 
-    private final QuizService quizService;
+    private final QuizService service;
 
     QuizController(QuizService quizService) {
-        this.quizService = quizService;
+        this.service = quizService;
     }
 
     @PostMapping
-    public ResponseEntity<?> createQuiz(
+    public ResponseEntity<?> create(
         @RequestBody @Valid QuizCreateRequest createRequest
     ) {
-        return quizService.createQuiz(createRequest);
+        service.createQuiz(createRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getAll(@PathVariable UUID uuid) {
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{uuid}")
+    public ResponseEntity<?> get(@PathVariable UUID uuid) {
+        return service
+            .returnQuiz(uuid)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{uuid}")
+    public ResponseEntity<?> patch(@PathVariable UUID uuid) {
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,13 +1,11 @@
 package com.sosehl.curtis_backend.services;
 
-import com.sosehl.curtis_backend.dto.QuizCreateRequest;
+import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
+import com.sosehl.curtis_backend.dto.response.QuizGetResponse;
 import com.sosehl.curtis_backend.mappers.QuizMapper;
-import com.sosehl.curtis_backend.models.QuestionsModel;
-import com.sosehl.curtis_backend.models.QuizModel;
 import com.sosehl.curtis_backend.repositories.QuizRepository;
-import java.util.List;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.RequestBody;
 
 public class QuizService {
@@ -20,11 +18,11 @@ public class QuizService {
         this.mapper = mapper;
     }
 
-    public ResponseEntity<?> createQuiz(
-        @RequestBody QuizCreateRequest quizCreate
-    ) {
-        repository.save(mapper.mapCreateQuiz(quizCreate));
+    public void createQuiz(@RequestBody QuizCreateRequest quizCreateDto) {
+        repository.save(mapper.mapCreateQuiz(quizCreateDto));
+    }
 
-        return ResponseEntity.ok().build();
+    public Optional<QuizGetResponse> returnQuiz(UUID quizUuid) {
+        return repository.findByUuid(quizUuid).map(mapper::mapGetResponse);
     }
 }

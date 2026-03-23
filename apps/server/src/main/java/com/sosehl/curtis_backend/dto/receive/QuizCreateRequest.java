@@ -1,5 +1,6 @@
-package com.sosehl.curtis_backend.dto;
+package com.sosehl.curtis_backend.dto.receive;
 
+import com.sosehl.curtis_backend.dto.quiz.QuestionDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -9,9 +10,6 @@ import lombok.Data;
 
 @Data
 public class QuizCreateRequest {
-
-    @NotBlank
-    private String uuid;
 
     @NotBlank
     @Size(min = 1, max = 100, message = "Název musí mít 1 až 100 znaků")

@@ -21,6 +21,8 @@ public class QuestionsModel {
     @ElementCollection
     private List<String> answers;
 
+    private Integer time;
+
     @ManyToOne
     @JoinColumn(name = "quiz_id")
     private QuizModel quiz;

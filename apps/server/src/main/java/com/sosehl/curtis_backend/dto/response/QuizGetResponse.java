@@ -1,3 +1,5 @@
+/*
+
 package com.sosehl.curtis_backend.models;
 
 import jakarta.persistence.*;
@@ -23,4 +25,31 @@ public class QuizModel {
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
     private List<QuestionsModel> questions;
+}
+
+
+*/
+
+package com.sosehl.curtis_backend.dto.response;
+
+import com.sosehl.curtis_backend.dto.quiz.QuestionDto;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import java.util.List;
+import java.util.UUID;
+import lombok.Data;
+
+@Data
+public class QuizGetResponse {
+
+    @NotBlank
+    UUID uuid;
+
+    @NotBlank
+    String title;
+
+    String description;
+
+    @Valid
+    List<QuestionDto> questions;
 }

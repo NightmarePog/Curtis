@@ -1,4 +1,4 @@
-package com.sosehl.curtis_backend.dto;
+package com.sosehl.curtis_backend.dto.quiz;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -25,5 +25,5 @@ public class QuestionDto {
 
     @NotNull(message = "Čas musí být vyplněn")
     @Min(value = 1, message = "Čas nemůže být menší než jedna vteřina")
-    private Float time;
+    private Integer time;
 }
