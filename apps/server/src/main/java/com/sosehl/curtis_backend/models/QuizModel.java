@@ -14,8 +14,7 @@ public class QuizModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID uuid;
+    private UUID uuid = UUID.randomUUID();
 
     private String title;
 

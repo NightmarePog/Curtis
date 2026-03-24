@@ -1,7 +1,9 @@
 package com.sosehl.curtis_backend.mappers;
 
 import com.sosehl.curtis_backend.dto.quiz.QuestionDto;
+import com.sosehl.curtis_backend.dto.quiz.QuestionPatchDto;
 import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
+import com.sosehl.curtis_backend.dto.receive.QuizPatchRequest;
 import com.sosehl.curtis_backend.dto.response.QuizGetResponse;
 import com.sosehl.curtis_backend.models.QuestionsModel;
 import com.sosehl.curtis_backend.models.QuizModel;
@@ -56,5 +58,51 @@ public class QuizMapper {
         );
         response.setDescription(model.getDescription());
         return response;
+    }
+
+    public QuizModel mapPatchQuiz(
+        QuizPatchRequest request,
+        QuizModel existingQuiz
+    ) {
+        if (request.getTitle() != null) {
+            existingQuiz.setTitle(request.getTitle());
+        }
+
+        if (request.getDescription() != null) {
+            existingQuiz.setDescription(request.getDescription());
+        }
+
+        if (request.getQuestions() != null) {
+            List<QuestionsModel> questions = request
+                .getQuestions()
+                .stream()
+                .map(this::mapPatchQuestion)
+                .toList();
+            existingQuiz.setQuestions(questions);
+        }
+
+        return existingQuiz;
+    }
+
+    private QuestionsModel mapPatchQuestion(QuestionPatchDto qDto) {
+        QuestionsModel question = new QuestionsModel();
+
+        if (qDto.getQuestion() != null) {
+            question.setQuestion(qDto.getQuestion());
+        }
+
+        if (qDto.getPossibleAnswers() != null) {
+            question.setAnswers(qDto.getPossibleAnswers());
+        }
+
+        if (qDto.getAnswersId() != null) {
+            question.setCorrectAnswers(qDto.getAnswersId());
+        }
+
+        if (qDto.getTime() != null) {
+            question.setTime(qDto.getTime());
+        }
+
+        return question;
     }
 }

@@ -1,11 +1,11 @@
 package com.sosehl.curtis_backend.controllers;
 
 import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
+import com.sosehl.curtis_backend.dto.receive.QuizPatchRequest;
 import com.sosehl.curtis_backend.dto.response.QuizGetResponse;
-import com.sosehl.curtis_backend.models.QuizModel;
 import com.sosehl.curtis_backend.services.QuizService;
 import jakarta.validation.Valid;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,8 +36,11 @@ class QuizController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll(@PathVariable UUID uuid) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<List<QuizGetResponse>> getAll() {
+        return service
+            .returnAllQuizzes()
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{uuid}")
@@ -48,8 +51,11 @@ class QuizController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PatchMapping("/{uuid}")
-    public ResponseEntity<?> patch(@PathVariable UUID uuid) {
-        return ResponseEntity.ok().build();
+    @PatchMapping
+    public ResponseEntity<?> patch(
+        @RequestBody @Valid QuizPatchRequest quizPatch
+    ) {
+        service.patchQuiz(quizPatch);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
