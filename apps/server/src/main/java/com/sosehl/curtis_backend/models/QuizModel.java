@@ -21,5 +21,5 @@ public class QuizModel {
     private String description;
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
-    private List<QuestionsModel> questions;
+    private List<QuestionModel> questions;
 }

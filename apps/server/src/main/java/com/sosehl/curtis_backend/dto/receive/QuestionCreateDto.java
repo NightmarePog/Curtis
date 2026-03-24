@@ -1,4 +1,4 @@
-package com.sosehl.curtis_backend.dto.quiz;
+package com.sosehl.curtis_backend.dto.receive;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -10,7 +10,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class QuestionDto {
+public class QuestionCreateDto {
 
     @NotBlank(message = "Musíte zadat otázku")
     @Size(min = 1, message = "Otázka musí mít alespoň 1 znak")
