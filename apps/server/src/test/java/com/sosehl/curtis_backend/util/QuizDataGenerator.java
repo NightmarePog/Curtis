@@ -47,7 +47,7 @@ public class QuizDataGenerator {
 
         q.setAnswersId(List.of(random.nextInt(answers.size())));
 
-        q.setTime(10 + random.nextInt() * 50);
+        q.setTime(Math.abs(random.nextInt() * 2));
 
         return q;
     }
