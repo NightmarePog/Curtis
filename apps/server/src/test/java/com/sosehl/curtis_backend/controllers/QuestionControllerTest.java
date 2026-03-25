@@ -49,7 +49,7 @@ class QuestionControllerTest {
         dto.setCorrectAnswers(List.of(0));
         dto.setAnswersId(List.of(1, 2));
         dto.setTime(30);
-        dto.setOrder(0);
+        dto.setQuestionOrder(0);
 
         doNothing().when(questionService).create(dto, quizUuid);
 
@@ -70,7 +70,7 @@ class QuestionControllerTest {
         Integer order = 0;
 
         QuestionModel question = new QuestionModel();
-        question.setOrder(order);
+        question.setQuestionOrder(order);
 
         when(questionService.get(quizUuid, order)).thenReturn(question);
 
@@ -86,10 +86,10 @@ class QuestionControllerTest {
         UUID quizUuid = UUID.randomUUID();
 
         QuestionModel question1 = new QuestionModel();
-        question1.setOrder(0);
+        question1.setQuestionOrder(0);
 
         QuestionModel question2 = new QuestionModel();
-        question2.setOrder(1);
+        question2.setQuestionOrder(1);
 
         List<QuestionModel> questions = List.of(question1, question2);
 

@@ -32,5 +32,5 @@ public class QuestionCreateDto {
 
     @NotNull(message = "Pořadí musí být vyplněno")
     @Min(value = 0, message = "Pořadí nemůže být menší než 0")
-    private Integer order;
+    private Integer questionOrder;
 }

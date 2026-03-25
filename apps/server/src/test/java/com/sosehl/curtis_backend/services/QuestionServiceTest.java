@@ -44,14 +44,14 @@ class QuestionServiceTest {
         quiz.setUuid(quizUuid);
 
         question = new QuestionModel();
-        question.setOrder(1);
+        question.setQuestionOrder(1);
         question.setQuiz(quiz);
     }
 
     @Test
     void testCreate() {
         QuestionCreateDto dto = new QuestionCreateDto();
-        dto.setOrder(1);
+        dto.setQuestionOrder(1);
         dto.setQuestion("Test question");
 
         when(quizRepository.findByUuid(quizUuid)).thenReturn(Optional.of(quiz));

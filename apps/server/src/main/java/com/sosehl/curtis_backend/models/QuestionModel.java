@@ -15,7 +15,7 @@ public class QuestionModel {
     private Long id;
 
     @OrderColumn
-    private Integer order;
+    private Integer questionOrder;
 
     private String question;
 

@@ -4,7 +4,9 @@ import com.sosehl.curtis_backend.dto.receive.QuestionCreateDto;
 import com.sosehl.curtis_backend.dto.receive.QuestionPatchDto;
 import com.sosehl.curtis_backend.models.QuestionModel;
 import com.sosehl.curtis_backend.models.QuizModel;
+import org.springframework.stereotype.Component;
 
+@Component
 public class QuestionMapper {
 
     public QuestionModel createMap(
@@ -18,7 +20,7 @@ public class QuestionMapper {
         model.setQuestion(qDto.getQuestion());
         model.setCorrectAnswers(qDto.getCorrectAnswers());
         model.setAnswers(qDto.getAnswers());
-        model.setOrder(qDto.getOrder());
+        model.setQuestionOrder(qDto.getQuestionOrder());
 
         return model;
     }

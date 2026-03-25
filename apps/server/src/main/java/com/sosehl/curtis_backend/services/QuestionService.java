@@ -47,7 +47,7 @@ public class QuestionService {
 
         QuestionModel question = questions
             .stream()
-            .filter(q -> q.getOrder().equals(qDto.getOriginalOrder()))
+            .filter(q -> q.getQuestionOrder().equals(qDto.getOriginalOrder()))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Otázka nebyla nalezena"));
 
@@ -62,16 +62,20 @@ public class QuestionService {
                 questions
                     .stream()
                     .filter(
-                        q -> q.getOrder() > oldPos && q.getOrder() <= newPos
+                        q ->
+                            q.getQuestionOrder() > oldPos &&
+                            q.getQuestionOrder() <= newPos
                     )
-                    .forEach(q -> q.setOrder(q.getOrder() - 1));
+                    .forEach(q -> q.setQuestionOrder(q.getQuestionOrder() - 1));
             } else {
                 questions
                     .stream()
                     .filter(
-                        q -> q.getOrder() >= newPos && q.getOrder() < oldPos
+                        q ->
+                            q.getQuestionOrder() >= newPos &&
+                            q.getQuestionOrder() < oldPos
                     )
-                    .forEach(q -> q.setOrder(q.getOrder() + 1));
+                    .forEach(q -> q.setQuestionOrder(q.getQuestionOrder() + 1));
             }
         }
 
@@ -88,7 +92,7 @@ public class QuestionService {
 
         QuestionModel question = questions
             .stream()
-            .filter(q -> q.getOrder().equals(order))
+            .filter(q -> q.getQuestionOrder().equals(order))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Otázka nebyla nalezena"));
 
@@ -96,8 +100,8 @@ public class QuestionService {
 
         questions
             .stream()
-            .filter(q -> q.getOrder() > order)
-            .forEach(q -> q.setOrder(q.getOrder() - 1));
+            .filter(q -> q.getQuestionOrder() > order)
+            .forEach(q -> q.setQuestionOrder(q.getQuestionOrder() - 1));
 
         repository.saveAll(questions);
     }
@@ -107,7 +111,7 @@ public class QuestionService {
             .findByQuiz_Uuid(quizUuid)
             .orElseThrow(() -> new RuntimeException("Kvíz nebyl nalezen"))
             .stream()
-            .filter(q -> q.getOrder().equals(order))
+            .filter(q -> q.getQuestionOrder().equals(order))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Otázka nebyla nalezena"));
     }
@@ -117,7 +121,7 @@ public class QuestionService {
             .findByQuiz_Uuid(quizUuid)
             .orElseThrow(() -> new RuntimeException("Kvíz nebyl nalezen"))
             .stream()
-            .sorted(Comparator.comparing(QuestionModel::getOrder))
+            .sorted(Comparator.comparing(QuestionModel::getQuestionOrder))
             .toList();
     }
 }
