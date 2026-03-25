@@ -8,8 +8,8 @@ import lombok.Data;
 @Data
 public class QuizPatchRequest {
 
-    @NotNull
-    UUID uuid;
+    @NotNull(message = "Neznámá otázka")
+    private UUID uuid;
 
     @Size(min = 1, max = 100, message = "Název musí mít 1 až 100 znaků")
     private String title;

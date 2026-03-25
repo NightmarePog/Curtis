@@ -56,6 +56,6 @@ class QuizController {
         @RequestBody @Valid QuizPatchRequest quizPatch
     ) {
         service.patchQuiz(quizPatch);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

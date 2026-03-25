@@ -20,6 +20,10 @@ public class QuizModel {
 
     private String description;
 
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
+    @OneToMany(
+        mappedBy = "quiz",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
     private List<QuestionModel> questions;
 }
