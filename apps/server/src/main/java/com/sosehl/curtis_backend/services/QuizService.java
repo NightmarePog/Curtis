@@ -25,8 +25,10 @@ public class QuizService {
         this.mapper = mapper;
     }
 
-    public void createQuiz(@RequestBody QuizCreateRequest quizCreateDto) {
-        repository.save(mapper.mapCreateQuiz(quizCreateDto));
+    public UUID createQuiz(@RequestBody QuizCreateRequest quizCreateDto) {
+        QuizModel quiz = mapper.mapCreateQuiz(quizCreateDto);
+        QuizModel savedQuiz = repository.save(quiz);
+        return savedQuiz.getUuid();
     }
 
     public Optional<QuizGetResponse> returnQuiz(UUID quizUuid) {

@@ -5,7 +5,10 @@ import com.sosehl.curtis_backend.dto.receive.QuizPatchRequest;
 import com.sosehl.curtis_backend.dto.response.QuizGetResponse;
 import com.sosehl.curtis_backend.services.QuizService;
 import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,11 +31,20 @@ class QuizController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(
+    public ResponseEntity<Map<String, Object>> create(
         @RequestBody @Valid QuizCreateRequest createRequest
     ) {
-        service.createQuiz(createRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        // Vytvoříme kvíz a získáme jeho UUID
+        UUID quizUuid = service.createQuiz(createRequest);
+
+        // Připravíme tělo s UUID
+        Map<String, Object> body = new HashMap<>();
+        body.put("quizUuid", quizUuid);
+
+        // Header Location s URL nového zdroje
+        URI location = URI.create("/quiz/" + quizUuid);
+
+        return ResponseEntity.created(location).body(body);
     }
 
     @GetMapping
@@ -44,7 +56,7 @@ class QuizController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<?> get(@PathVariable UUID uuid) {
+    public ResponseEntity<QuizGetResponse> get(@PathVariable UUID uuid) {
         return service
             .returnQuiz(uuid)
             .map(ResponseEntity::ok)

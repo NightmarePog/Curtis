@@ -10,8 +10,10 @@ import com.sosehl.curtis_backend.repositories.QuizRepository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class QuestionService {
@@ -20,7 +22,7 @@ public class QuestionService {
     private final QuizRepository quizRepository;
     private final QuestionMapper mapper;
 
-    QuestionService(
+    public QuestionService(
         QuestionRepository repository,
         QuizRepository quizRepository,
         QuestionMapper mapper
@@ -32,24 +34,40 @@ public class QuestionService {
 
     @Transactional
     public void create(QuestionCreateDto qDto, UUID quizUuid) {
-        QuizModel quizModel = quizRepository
+        QuizModel quiz = quizRepository
             .findByUuid(quizUuid)
-            .orElseThrow(() -> new RuntimeException("Kvíz nebyl nalezen"));
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Kvíz nebyl nalezen"
+                )
+            );
 
-        repository.save(mapper.createMap(qDto, quizModel));
+        QuestionModel question = mapper.createMap(qDto, quiz);
+        repository.save(question);
     }
 
     @Transactional
     public void patch(QuestionPatchDto qDto, UUID quizUuid) {
         List<QuestionModel> questions = repository
             .findByQuiz_Uuid(quizUuid)
-            .orElseThrow(() -> new RuntimeException("Kvíz nebyl nalezen"));
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Kvíz nebyl nalezen"
+                )
+            );
 
         QuestionModel question = questions
             .stream()
             .filter(q -> q.getQuestionOrder().equals(qDto.getOriginalOrder()))
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Otázka nebyla nalezena"));
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Otázka nebyla nalezena"
+                )
+            );
 
         if (
             qDto.getNewOrder() != null &&
@@ -80,7 +98,6 @@ public class QuestionService {
         }
 
         mapper.patchMap(qDto, question);
-
         repository.saveAll(questions);
     }
 
@@ -88,13 +105,23 @@ public class QuestionService {
     public void delete(UUID quizUuid, Integer order) {
         List<QuestionModel> questions = repository
             .findByQuiz_Uuid(quizUuid)
-            .orElseThrow(() -> new RuntimeException("Kvíz nebyl nalezen"));
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Kvíz nebyl nalezen"
+                )
+            );
 
         QuestionModel question = questions
             .stream()
             .filter(q -> q.getQuestionOrder().equals(order))
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Otázka nebyla nalezena"));
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Otázka nebyla nalezena"
+                )
+            );
 
         repository.delete(question);
 
@@ -109,17 +136,32 @@ public class QuestionService {
     public QuestionModel get(UUID quizUuid, Integer order) {
         return repository
             .findByQuiz_Uuid(quizUuid)
-            .orElseThrow(() -> new RuntimeException("Kvíz nebyl nalezen"))
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Kvíz nebyl nalezen"
+                )
+            )
             .stream()
             .filter(q -> q.getQuestionOrder().equals(order))
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Otázka nebyla nalezena"));
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Otázka nebyla nalezena"
+                )
+            );
     }
 
     public List<QuestionModel> getAll(UUID quizUuid) {
         return repository
             .findByQuiz_Uuid(quizUuid)
-            .orElseThrow(() -> new RuntimeException("Kvíz nebyl nalezen"))
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Kvíz nebyl nalezen"
+                )
+            )
             .stream()
             .sorted(Comparator.comparing(QuestionModel::getQuestionOrder))
             .toList();

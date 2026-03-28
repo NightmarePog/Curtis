@@ -10,14 +10,8 @@ import lombok.Data;
 @Data
 public class QuizGetResponse {
 
-    @NotBlank
     UUID uuid;
-
-    @NotBlank
     String title;
-
     String description;
-
-    @Valid
-    List<QuestionCreateDto> questions;
+    List<QuestionResponse> questions;
 }

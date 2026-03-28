@@ -1,15 +1,24 @@
 package com.sosehl.curtis_backend;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import java.util.Properties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
-@RestController
 public class CurtisBackendApplication {
 
     public static void main(String[] args) {
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+
+        String clientSecret = dotenv.get("CLIENT_SECRET");
+        if (clientSecret != null) {
+            System.setProperty(
+                "spring.security.oauth2.client.registration.microsoft.client-secret",
+                clientSecret
+            );
+        }
+
         SpringApplication app = new SpringApplication(
             CurtisBackendApplication.class
         );

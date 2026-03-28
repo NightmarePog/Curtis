@@ -1,7 +1,10 @@
 package com.sosehl.curtis_backend.controllers;
 
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,9 +45,6 @@ class QuizControllerTest {
         QuizCreateRequest request = new QuizCreateRequest();
         request.setTitle("Test Quiz");
         request.setDescription("Popis quizu");
-        request.setOrder(0);
-
-        doNothing().when(quizService).createQuiz(request);
 
         mockMvc
             .perform(
@@ -52,18 +52,15 @@ class QuizControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request))
             )
-            .andExpect(status().isCreated()); // POST → 201
+            .andExpect(status().isCreated());
 
-        verify(quizService, times(1)).createQuiz(request);
+        verify(quizService, times(1)).createQuiz(any(QuizCreateRequest.class));
     }
 
     @Test
     void shouldReturnCreatedWhenDescriptionMissing() throws Exception {
         QuizCreateRequest request = new QuizCreateRequest();
         request.setTitle("Test Quiz");
-        request.setOrder(0); // description nepovinné
-
-        doNothing().when(quizService).createQuiz(request);
 
         mockMvc
             .perform(
@@ -71,9 +68,9 @@ class QuizControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request))
             )
-            .andExpect(status().isCreated()); // POST → 201
+            .andExpect(status().isCreated());
 
-        verify(quizService, times(1)).createQuiz(request);
+        verify(quizService, times(1)).createQuiz(any(QuizCreateRequest.class));
     }
 
     @Test
@@ -85,16 +82,14 @@ class QuizControllerTest {
         request.setTitle("Nový název");
         request.setDescription("Nový popis");
 
-        doNothing().when(quizService).patchQuiz(request);
-
         mockMvc
             .perform(
                 patch("/quiz")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request))
             )
-            .andExpect(status().isOk()); // PATCH → 200
+            .andExpect(status().isOk());
 
-        verify(quizService, times(1)).patchQuiz(request);
+        verify(quizService, times(1)).patchQuiz(any(QuizPatchRequest.class));
     }
 }

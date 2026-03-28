@@ -21,12 +21,12 @@ public class QuestionController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(
+    public ResponseEntity<String> create(
         @PathVariable("quizUuid") UUID quizUuid,
         @RequestBody @Valid QuestionCreateDto qDto
     ) {
         service.create(qDto, quizUuid);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("OK");
     }
 
     @GetMapping
@@ -47,23 +47,22 @@ public class QuestionController {
     }
 
     @PatchMapping("/{questionId}")
-    public ResponseEntity<?> patch(
+    public ResponseEntity<String> patch(
         @PathVariable("quizUuid") UUID quizUuid,
         @PathVariable("questionId") Integer questionId,
         @RequestBody QuestionPatchDto dto
     ) {
-        // mapujeme questionId na originalOrder
         dto.setOriginalOrder(questionId);
         service.patch(dto, quizUuid);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("OK");
     }
 
     @DeleteMapping("/{questionId}")
-    public ResponseEntity<?> delete(
+    public ResponseEntity<String> delete(
         @PathVariable("quizUuid") UUID quizUuid,
         @PathVariable("questionId") Integer questionId
     ) {
         service.delete(quizUuid, questionId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("OK");
     }
 }

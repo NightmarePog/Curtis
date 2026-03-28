@@ -1,25 +1,47 @@
 package com.sosehl.curtis_backend.controllers;
 
+import com.sosehl.curtis_backend.dto.response.QuestionResponse;
+import com.sosehl.curtis_backend.services.QuizSessionService;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+@RestController
 public class QuizSessionController {
 
-    @GetMapping("/session/{uuid}/start")
-    public ResponseEntity<?> start(@PathVariable UUID uuid) {
-        return ResponseEntity.ok().build();
+    private QuizSessionService service;
+
+    QuizSessionController(QuizSessionService service) {
+        this.service = service;
+    }
+
+    @GetMapping("/session/{quizUuid}/start")
+    public ResponseEntity<QuestionResponse> start(
+        @PathVariable UUID quizUuid,
+        @AuthenticationPrincipal OAuth2User principal
+    ) {
+        QuestionResponse response = service.start(quizUuid, principal);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/session/{uuid}/next")
-    public ResponseEntity<?> nextAction(@PathVariable UUID uuid) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<QuestionResponse> nextAction(
+        @PathVariable UUID uuid
+    ) {
+        QuestionResponse nextQuestion = service.next(uuid);
+        if (nextQuestion == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(nextQuestion);
     }
 
     @PostMapping("/session/{uuid}/results")
-    public ResponseEntity<?> getResults(@PathVariable UUID uuid) {
-        return ResponseEntity.ok().build();
+    public ResponseEntity<String> getResults(@PathVariable UUID uuid) {
+        return ResponseEntity.ok("OK");
     }
 }

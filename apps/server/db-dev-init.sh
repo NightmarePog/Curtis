@@ -8,17 +8,32 @@ PORT=5432
 echo "🔍 Checking existing container..."
 
 # Stop + remove container if exists
-if [ "$(docker ps -aq -f name=$CONTAINER_NAME)" ]; then
+if docker ps -aq -f name="^/${CONTAINER_NAME}$" | grep -q .; then
   echo "🗑 Removing existing container..."
   docker rm -f $CONTAINER_NAME
 fi
 
 echo "🔍 Checking processes on port $PORT..."
 
-# Kill process using port
+# Kill anything using the port
+PIDS=$(lsof -ti :$PORT || true)
+
+if [ -n "$PIDS" ]; then
+  echo "⚠️ Port $PORT is in use. Killing processes: $PIDS"
+  kill -9 $PIDS || true
+fi
+
+# Try to stop system postgres (very common culprit)
+if systemctl is-active --quiet postgresql 2>/dev/null; then
+  echo "⚠️ Stopping system PostgreSQL..."
+  sudo systemctl stop postgresql
+fi
+
+# Final check
 if lsof -i :$PORT >/dev/null 2>&1; then
-  echo "⚠️ Port $PORT is in use. Killing process..."
-  lsof -ti :$PORT | xargs -r kill -9
+  echo "❌ Port $PORT is STILL in use. Aborting."
+  lsof -i :$PORT
+  exit 1
 fi
 
 echo "🚀 Starting PostgreSQL container..."
@@ -30,11 +45,10 @@ docker run -d \
   -e POSTGRES_PASSWORD=curtispass \
   -p $PORT:5432 \
   -v pgdata:/var/lib/postgresql/data \
-  docker.io/library/postgres:17
+  postgres:17
 
 echo "⏳ Waiting for database to be ready..."
 
-# Wait loop
 until docker exec $CONTAINER_NAME pg_isready -U curtisuser >/dev/null 2>&1; do
   echo "💤 sleeping..."
   sleep 1
