@@ -1,8 +1,6 @@
 package com.sosehl.curtis_backend.dto.response;
 
-import com.sosehl.curtis_backend.dto.receive.QuestionCreateDto;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.Data;
@@ -14,4 +12,5 @@ public class QuizGetResponse {
     String title;
     String description;
     List<QuestionResponse> questions;
+    Integer ExpiresInMinutes;
 }

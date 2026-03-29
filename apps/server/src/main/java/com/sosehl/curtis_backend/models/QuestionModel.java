@@ -2,7 +2,6 @@ package com.sosehl.curtis_backend.models;
 
 import jakarta.persistence.*;
 import java.util.List;
-import java.util.UUID;
 import lombok.Data;
 
 @Data
@@ -19,10 +18,10 @@ public class QuestionModel {
 
     private String question;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<Integer> correctAnswers;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> answers;
 
     private Integer time;

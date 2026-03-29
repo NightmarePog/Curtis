@@ -9,7 +9,6 @@ public class LoginController {
 
     @GetMapping("/login")
     public RedirectView login() {
-        // přesměruje přímo na Microsoft OAuth2 authorization endpoint
         return new RedirectView("/oauth2/authorization/microsoft");
     }
 }

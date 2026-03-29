@@ -12,4 +12,7 @@ public class QuizCreateRequest {
     private String title;
 
     private String description;
+
+    @NotBlank(message = "je třeba zadat čas expirace")
+    private Integer expireInMinutes;
 }

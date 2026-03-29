@@ -34,14 +34,11 @@ class QuizController {
     public ResponseEntity<Map<String, Object>> create(
         @RequestBody @Valid QuizCreateRequest createRequest
     ) {
-        // Vytvoříme kvíz a získáme jeho UUID
         UUID quizUuid = service.createQuiz(createRequest);
 
-        // Připravíme tělo s UUID
         Map<String, Object> body = new HashMap<>();
         body.put("quizUuid", quizUuid);
 
-        // Header Location s URL nového zdroje
         URI location = URI.create("/quiz/" + quizUuid);
 
         return ResponseEntity.created(location).body(body);

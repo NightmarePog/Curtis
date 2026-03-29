@@ -18,26 +18,28 @@ import org.springframework.web.server.ResponseStatusException;
 public class QuizService {
 
     private final QuizRepository repository;
-    private final QuizMapper mapper;
 
-    QuizService(QuizRepository repository, QuizMapper mapper) {
+    QuizService(QuizRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     public UUID createQuiz(@RequestBody QuizCreateRequest quizCreateDto) {
-        QuizModel quiz = mapper.mapCreateQuiz(quizCreateDto);
+        QuizModel quiz = QuizMapper.mapCreateQuiz(quizCreateDto);
         QuizModel savedQuiz = repository.save(quiz);
         return savedQuiz.getUuid();
     }
 
     public Optional<QuizGetResponse> returnQuiz(UUID quizUuid) {
-        return repository.findByUuid(quizUuid).map(mapper::mapGetResponse);
+        return repository.findByUuid(quizUuid).map(QuizMapper::mapGetResponse);
     }
 
     public Optional<List<QuizGetResponse>> returnAllQuizzes() {
         return Optional.of(
-            repository.findAll().stream().map(mapper::mapGetResponse).toList()
+            repository
+                .findAll()
+                .stream()
+                .map(QuizMapper::mapGetResponse)
+                .toList()
         );
     }
 
@@ -51,6 +53,6 @@ public class QuizService {
                 )
             );
 
-        repository.save(mapper.mapPatchQuiz(quizPatch, existingQuiz));
+        repository.save(QuizMapper.mapPatchQuiz(quizPatch, existingQuiz));
     }
 }

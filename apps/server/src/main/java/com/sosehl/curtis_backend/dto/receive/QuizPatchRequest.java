@@ -1,7 +1,9 @@
 package com.sosehl.curtis_backend.dto.receive;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Data;
 
@@ -15,4 +17,7 @@ public class QuizPatchRequest {
     private String title;
 
     private String description;
+
+    @NotBlank
+    private LocalDateTime expireAt;
 }

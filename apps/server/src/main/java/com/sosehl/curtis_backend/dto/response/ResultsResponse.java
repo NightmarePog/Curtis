@@ -9,5 +9,5 @@ public class ResultsResponse {
     private Integer score;
     private Integer maxScore;
     private List<QuestionResponse> questions;
-    private List<Integer> answers;
+    private List<List<Integer>> answers;
 }

@@ -1,6 +1,5 @@
 package com.sosehl.curtis_backend.mappers;
 
-import com.sosehl.curtis_backend.dto.receive.QuestionCreateDto;
 import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
 import com.sosehl.curtis_backend.dto.receive.QuizPatchRequest;
 import com.sosehl.curtis_backend.dto.response.QuestionResponse;
@@ -9,19 +8,19 @@ import com.sosehl.curtis_backend.models.QuizModel;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
-@Component
 public class QuizMapper {
 
-    public QuizModel mapCreateQuiz(QuizCreateRequest quizCreateDto) {
+    public static QuizModel mapCreateQuiz(QuizCreateRequest quizCreateDto) {
         QuizModel quizModel = new QuizModel();
 
         quizModel.setTitle(quizCreateDto.getTitle());
         quizModel.setDescription(quizCreateDto.getDescription());
+        quizModel.setExpiresInMinutes(quizCreateDto.getExpireInMinutes());
 
         return quizModel;
     }
 
-    public QuizGetResponse mapGetResponse(QuizModel model) {
+    public static QuizGetResponse mapGetResponse(QuizModel model) {
         QuizGetResponse response = new QuizGetResponse();
 
         List<QuestionResponse> questions = model
@@ -34,19 +33,21 @@ public class QuizMapper {
                 r.setAnswers(q.getAnswers());
                 r.setCorrectAnswers(q.getCorrectAnswers());
                 r.setTime(q.getTime());
+
                 return r;
             })
             .toList();
 
         response.setUuid(model.getUuid());
         response.setTitle(model.getTitle());
+        response.setExpiresInMinutes(model.getExpiresInMinutes());
         response.setDescription(model.getDescription());
         response.setQuestions(questions);
 
         return response;
     }
 
-    public QuizModel mapPatchQuiz(
+    public static QuizModel mapPatchQuiz(
         QuizPatchRequest request,
         QuizModel existingQuiz
     ) {

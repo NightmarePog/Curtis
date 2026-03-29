@@ -1,6 +1,7 @@
 package com.sosehl.curtis_backend.models;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.Data;
@@ -26,4 +27,6 @@ public class QuizModel {
         orphanRemoval = true
     )
     private List<QuestionModel> questions;
+
+    private Integer expiresInMinutes;
 }
