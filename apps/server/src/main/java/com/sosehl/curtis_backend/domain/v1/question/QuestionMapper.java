@@ -2,36 +2,33 @@ package com.sosehl.curtis_backend.domain.v1.question;
 
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionCreateDto;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionPatchDto;
+import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.quiz.Quiz;
-import org.springframework.stereotype.Component;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Component
-public class QuestionMapper {
+@Mapper(componentModel = "spring")
+public interface QuestionMapper {
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "quiz", source = "quiz")
+    @Mapping(target = "question", source = "dto.question")
+    @Mapping(target = "timeInSeconds", source = "dto.timeInSeconds")
+    @Mapping(target = "answers", source = "dto.answers")
+    Question toEntity(QuestionCreateDto dto, Quiz quiz);
 
-    public Question createMap(QuestionCreateDto qDto, Quiz quizModel) {
-        Question model = new Question();
+    @Mapping(target = "quizUuid", source = "quiz.uuid")
+    QuestionResponse toResponse(Question question);
 
-        model.setQuiz(quizModel);
-        model.setTimeInSeconds(qDto.getTimeInSeconds());
-        model.setQuestion(qDto.getQuestion());
-        model.setAnswers(qDto.getAnswers());
-
-        return model;
-    }
-
-    public Question patchMap(QuestionPatchDto qDto, Question model) {
-        if (qDto.getTimeInSeconds() != null) {
-            model.setTimeInSeconds(qDto.getTimeInSeconds());
-        }
-
-        if (qDto.getQuestion() != null) {
-            model.setQuestion(qDto.getQuestion());
-        }
-
-        if (qDto.getAnswers() != null) {
-            model.setAnswers(qDto.getAnswers());
-        }
-
-        return model;
-    }
+    @BeanMapping(
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+    )
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "quiz", ignore = true)
+    void updateFromPatch(
+        QuestionPatchDto dto,
+        @MappingTarget Question question
+    );
 }

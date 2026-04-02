@@ -1,56 +1,33 @@
 package com.sosehl.curtis_backend.domain.v1.quiz;
 
-import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionMapper;
 import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizCreateRequest;
 import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizGetResponse;
 import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizPatchRequest;
-import java.util.List;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-public class QuizMapper {
+@Mapper(componentModel = "spring", uses = { QuestionMapper.class })
+public interface QuizMapper {
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "editedAt", ignore = true)
+    @Mapping(target = "questions", ignore = true)
+    Quiz toEntity(QuizCreateRequest request);
 
-    public static Quiz mapCreateQuiz(QuizCreateRequest quizCreateDto) {
-        Quiz quizModel = new Quiz();
+    QuizGetResponse toResponse(Quiz quiz);
 
-        quizModel.setTitle(quizCreateDto.getTitle());
-        quizModel.setDescription(quizCreateDto.getDescription());
-
-        return quizModel;
-    }
-
-    public static QuizGetResponse mapGetResponse(Quiz model) {
-        QuizGetResponse response = new QuizGetResponse();
-
-        List<QuestionResponse> questions = model
-            .getQuestions()
-            .stream()
-            .map(q -> {
-                QuestionResponse r = new QuestionResponse();
-                r.setQuestion(q.getQuestion());
-
-                return r;
-            })
-            .toList();
-
-        response.setUuid(model.getUuid());
-        response.setTitle(model.getTitle());
-        response.setDescription(model.getDescription());
-        response.setQuestions(questions);
-
-        return response;
-    }
-
-    public static Quiz mapPatchQuiz(
-        QuizPatchRequest request,
-        Quiz existingQuiz
-    ) {
-        if (request.getTitle() != null) {
-            existingQuiz.setTitle(request.getTitle());
-        }
-
-        if (request.getDescription() != null) {
-            existingQuiz.setDescription(request.getDescription());
-        }
-
-        return existingQuiz;
-    }
+    @BeanMapping(
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+    )
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "editedAt", ignore = true)
+    @Mapping(target = "questions", ignore = true)
+    void updateFromPatch(QuizPatchRequest request, @MappingTarget Quiz quiz);
 }

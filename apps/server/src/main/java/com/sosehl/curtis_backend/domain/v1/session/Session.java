@@ -2,144 +2,94 @@ package com.sosehl.curtis_backend.domain.v1.session;
 
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizGetResponse;
-import com.sosehl.curtis_backend.enums.SessionState;
+import com.sosehl.curtis_backend.domain.v1.session.exceptions.SessionExpiredException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Session {
 
-    private QuizGetResponse quiz;
-    private String userID;
-    private UUID uuid;
-    private LocalDateTime expirationDate;
-    private List<List<Integer>> userAnswers = new ArrayList<>();
-    private Integer questionIndex = 0;
+    private final UUID uuid;
+    private final String adminId;
+    private final QuizGetResponse quiz;
+    private final LocalDateTime expiresAt;
+    private final Map<String, StudentAttempt> attempts =
+        new ConcurrentHashMap<>();
 
-    public Session setQuiz(QuizGetResponse quiz) {
+    public Session(
+        String adminId,
+        QuizGetResponse quiz,
+        Integer expiresInMinutes
+    ) {
+        if (adminId == null) throw new IllegalArgumentException(
+            "adminId is missing"
+        );
+        if (quiz == null) throw new IllegalArgumentException("quiz is missing");
+        if (quiz.getQuestions() == null || quiz.getQuestions().isEmpty()) {
+            throw new IllegalArgumentException("Quiz nemá žádné otázky");
+        }
+
+        this.uuid = UUID.randomUUID();
+        this.adminId = adminId;
         this.quiz = quiz;
-        return this;
+        this.expiresAt = LocalDateTime.now().plusMinutes(
+            expiresInMinutes != null ? expiresInMinutes : 30
+        );
     }
 
-    public Session setUserId(String userId) {
-        this.userID = userId;
-        return this;
+    public UUID getUuid() {
+        return uuid;
     }
 
-    public void setSessionUuid(UUID uuid) {
-        this.uuid = uuid;
+    public String getAdminId() {
+        return adminId;
     }
 
-    public UUID getSessionUuid(UUID uuid) {
-        return this.uuid;
-    }
-
-    public String getUserID() {
-        return userID;
-    }
-
-    public SessionState getState() {
-        return this.state;
-    }
-
-    public Session build() {
-        if (this.quiz == null) {
-            throw new RuntimeException("quiz is missing");
-        }
-        if (this.userID == null) {
-            throw new RuntimeException("userId is missing");
+    public void join(String studentId) {
+        if (isExpired()) throw new SessionExpiredException("Session vypršela");
+        if (attempts.containsKey(studentId)) {
+            throw new IllegalStateException("Student již session hrál");
         }
 
-        this.expirationDate = LocalDateTime.now().plusMinutes(
-            this.quiz.getExpiresInMinutes() != null
-                ? this.quiz.getExpiresInMinutes()
-                : 30
+        List<QuestionResponse> questions = new ArrayList<>(quiz.getQuestions());
+        if (Boolean.TRUE.equals(quiz.getShuffle())) Collections.shuffle(
+            questions
         );
 
-        this.state = SessionState.RUNNING;
+        Integer max = quiz.getMaxQuestionsPerSession();
+        if (max != null && max < questions.size()) {
+            questions = questions.subList(0, max);
+        }
 
-        List<QuestionResponse> questions = new ArrayList<>(
-            this.quiz.getQuestions()
+        attempts.put(studentId, new StudentAttempt(studentId, questions));
+    }
+
+    public QuestionResponse nextQuestion(String studentId) {
+        if (isExpired()) throw new SessionExpiredException("Session vypršela");
+        return getAttempt(studentId).nextQuestion();
+    }
+
+    public void submitAnswer(String studentId, List<Integer> answer) {
+        getAttempt(studentId).addAnswer(answer);
+    }
+
+    public StudentAttempt finishAttempt(String studentId) {
+        return getAttempt(studentId).finish();
+    }
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(expiresAt);
+    }
+
+    private StudentAttempt getAttempt(String studentId) {
+        StudentAttempt attempt = attempts.get(studentId);
+        if (attempt == null) throw new IllegalStateException(
+            "Student není připojen k session"
         );
-        Collections.shuffle(questions);
-        this.quiz.setQuestions(questions);
-
-        return this;
-    }
-
-    public void setUserAnswer(List<Integer> userAnswer) {
-        this.userAnswers.add(userAnswer);
-    }
-
-    public QuestionResponse nextQuestion() {
-        if (state != SessionState.RUNNING) {
-            throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Kvíz momentálně není ve stavu 'LIVE'"
-            );
-        }
-
-        if (
-            expirationDate != null &&
-            LocalDateTime.now().isAfter(expirationDate)
-        ) {
-            this.state = SessionState.ARCHIVED;
-            throw new ResponseStatusException(HttpStatus.GONE, "Kvíz vypršel");
-        }
-
-        if (questionIndex >= this.quiz.getQuestions().size()) {
-            this.state = SessionState.ARCHIVED;
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,
-                "Žádné další otázky"
-            );
-        }
-
-        QuestionResponse question = this.quiz.getQuestions().get(questionIndex);
-        question.setSessionUuid(uuid);
-        questionIndex++;
-
-        if (questionIndex >= this.quiz.getQuestions().size()) {
-            this.state = SessionState.ARCHIVED;
-        }
-
-        return question;
-    }
-
-    public ResultsResponse getResults() {
-        if (state != SessionState.ARCHIVED) {
-            throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Kvíz ještě nebyl dokončen"
-            );
-        }
-
-        ResultsResponse response = new ResultsResponse();
-
-        int score = 0;
-        int maxScore = quiz.getQuestions().size();
-
-        for (int i = 0; i < quiz.getQuestions().size(); i++) {
-            QuestionResponse question = quiz.getQuestions().get(i);
-
-            List<Integer> correctAnswers = question.getCorrectAnswers();
-            List<Integer> userAnswer =
-                userAnswers.size() > i ? userAnswers.get(i) : new ArrayList<>();
-
-            if (correctAnswers.equals(userAnswer)) {
-                score++;
-            }
-        }
-
-        response.setScore(score);
-        response.setMaxScore(maxScore);
-        response.setQuestions(quiz.getQuestions());
-        response.setAnswers(userAnswers);
-
-        return response;
+        return attempt;
     }
 }

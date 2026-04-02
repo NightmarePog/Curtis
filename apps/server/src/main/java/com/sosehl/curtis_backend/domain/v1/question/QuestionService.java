@@ -29,7 +29,7 @@ public class QuestionService {
     }
 
     @Transactional
-    public void create(QuestionCreateDto qDto, UUID quizUuid) {
+    public void create(QuestionCreateDto dto, UUID quizUuid) {
         Quiz quiz = quizRepository
             .findByUuid(quizUuid)
             .orElseThrow(() ->
@@ -39,83 +39,43 @@ public class QuestionService {
                 )
             );
 
-        Question question = mapper.createMap(qDto, quiz);
+        repository.save(mapper.toEntity(dto, quiz));
+    }
+
+    @Transactional
+    public void patch(QuestionPatchDto dto, UUID quizUuid) {
+        Question question = findQuestion(quizUuid, dto.getQuestionId());
+        mapper.updateFromPatch(dto, question);
         repository.save(question);
     }
 
     @Transactional
-    public void patch(QuestionPatchDto qDto, UUID quizUuid) {
-        List<Question> questions = repository
-            .findByQuiz_Uuid(quizUuid)
-            .orElseThrow(() ->
-                new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Kvíz nebyl nalezen"
-                )
-            );
-
-        Question question = questions
-            .stream()
-            .filter(q -> q.getId().equals(qDto.getQuestionId()))
-            .findFirst()
-            .orElseThrow(() ->
-                new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Otázka nebyla nalezena"
-                )
-            );
-
-        mapper.patchMap(qDto, question);
-        repository.saveAll(questions);
+    public void delete(UUID quizUuid, Long questionId) {
+        repository.delete(findQuestion(quizUuid, questionId));
     }
 
-    @Transactional
-    public void delete(UUID quizUuid, Integer questionId) {
-        List<Question> questions = repository
-            .findByQuiz_Uuid(quizUuid)
-            .orElseThrow(() ->
-                new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Kvíz nebyl nalezen"
-                )
-            );
-
-        Question question = questions
-            .stream()
-            .filter(q -> q.getId().equals(questionId))
-            .findFirst()
-            .orElseThrow(() ->
-                new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Otázka nebyla nalezena"
-                )
-            );
-
-        repository.delete(question);
-        repository.saveAll(questions);
-    }
-
-    public Question get(UUID quizUuid, Integer questionId) {
-        return repository
-            .findByQuiz_Uuid(quizUuid)
-            .orElseThrow(() ->
-                new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Kvíz nebyl nalezen"
-                )
-            )
-            .stream()
-            .filter(q -> q.getId().equals(questionId))
-            .findFirst()
-            .orElseThrow(() ->
-                new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Otázka nebyla nalezena"
-                )
-            );
+    public Question get(UUID quizUuid, Long questionId) {
+        return findQuestion(quizUuid, questionId);
     }
 
     public List<Question> getAll(UUID quizUuid) {
+        return getQuestions(quizUuid);
+    }
+
+    private Question findQuestion(UUID quizUuid, Long questionId) {
+        return getQuestions(quizUuid)
+            .stream()
+            .filter(q -> q.getId().equals(questionId))
+            .findFirst()
+            .orElseThrow(() ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Otázka nebyla nalezena"
+                )
+            );
+    }
+
+    private List<Question> getQuestions(UUID quizUuid) {
         return repository
             .findByQuiz_Uuid(quizUuid)
             .orElseThrow(() ->
@@ -123,9 +83,6 @@ public class QuestionService {
                     HttpStatus.NOT_FOUND,
                     "Kvíz nebyl nalezen"
                 )
-            )
-            .stream()
-            // .sorted(Comparator.comparing(Question::getQuestionOrder))
-            .toList();
+            );
     }
 }

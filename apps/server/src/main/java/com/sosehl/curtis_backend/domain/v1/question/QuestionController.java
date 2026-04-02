@@ -3,13 +3,14 @@ package com.sosehl.curtis_backend.domain.v1.question;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionCreateDto;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionPatchDto;
 import jakarta.validation.Valid;
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/quiz/{quizUuid}/")
+@RequestMapping("/v1/quizzes/{quizUuid}/questions")
 public class QuestionController {
 
     private final QuestionService service;
@@ -19,47 +20,46 @@ public class QuestionController {
     }
 
     @PostMapping
-    public ResponseEntity<String> create(
-        @PathVariable("quizUuid") UUID quizUuid,
-        @RequestBody @Valid QuestionCreateDto qDto
+    public ResponseEntity<Void> create(
+        @PathVariable UUID quizUuid,
+        @RequestBody @Valid QuestionCreateDto dto
     ) {
-        service.create(qDto, quizUuid);
-        return ResponseEntity.ok("OK");
+        service.create(dto, quizUuid);
+        return ResponseEntity.created(
+            URI.create("/api/v1/quizzes/" + quizUuid + "/questions")
+        ).build();
     }
 
     @GetMapping
-    public ResponseEntity<List<Question>> getAll(
-        @PathVariable("quizUuid") UUID quizUuid
-    ) {
-        List<Question> questions = service.getAll(quizUuid);
-        return ResponseEntity.ok(questions);
+    public ResponseEntity<List<Question>> getAll(@PathVariable UUID quizUuid) {
+        return ResponseEntity.ok(service.getAll(quizUuid));
     }
 
     @GetMapping("/{questionId}")
     public ResponseEntity<Question> get(
-        @PathVariable("quizUuid") UUID quizUuid,
-        @PathVariable("questionId") Integer questionId
+        @PathVariable UUID quizUuid,
+        @PathVariable Long questionId
     ) {
-        Question question = service.get(quizUuid, questionId);
-        return ResponseEntity.ok(question);
+        return ResponseEntity.ok(service.get(quizUuid, questionId));
     }
 
     @PatchMapping("/{questionId}")
-    public ResponseEntity<String> patch(
-        @PathVariable("quizUuid") UUID quizUuid,
-        @PathVariable("questionId") Integer questionId,
-        @RequestBody QuestionPatchDto dto
+    public ResponseEntity<Void> patch(
+        @PathVariable UUID quizUuid,
+        @PathVariable Long questionId,
+        @RequestBody @Valid QuestionPatchDto dto
     ) {
+        dto.setQuestionId(questionId);
         service.patch(dto, quizUuid);
-        return ResponseEntity.ok("OK");
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{questionId}")
-    public ResponseEntity<String> delete(
-        @PathVariable("quizUuid") UUID quizUuid,
-        @PathVariable("questionId") Integer questionId
+    public ResponseEntity<Void> delete(
+        @PathVariable UUID quizUuid,
+        @PathVariable Long questionId
     ) {
         service.delete(quizUuid, questionId);
-        return ResponseEntity.ok("OK");
+        return ResponseEntity.noContent().build();
     }
 }

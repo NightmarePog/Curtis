@@ -1,6 +1,7 @@
 package com.sosehl.curtis_backend.domain.v1.quiz.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -13,6 +14,8 @@ public class QuizCreateRequest {
 
     private String description;
 
-    @NotBlank(message = "je třeba zadat čas expirace")
-    private Integer expireInMinutes;
+    @NotNull(message = "maxQuestionsPerSession je povinný")
+    private Integer maxQuestionsPerSession;
+
+    private Boolean shuffle = false;
 }

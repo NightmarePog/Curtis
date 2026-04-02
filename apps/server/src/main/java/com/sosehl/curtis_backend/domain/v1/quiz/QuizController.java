@@ -5,11 +5,9 @@ import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizGetResponse;
 import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizPatchRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,50 +18,42 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/quiz")
-class QuizController {
+@RequestMapping("/v1/quizzes")
+public class QuizController {
 
     private final QuizService service;
 
-    QuizController(QuizService quizService) {
-        this.service = quizService;
+    QuizController(QuizService service) {
+        this.service = service;
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> create(
-        @RequestBody @Valid QuizCreateRequest createRequest
+    public ResponseEntity<Map<String, UUID>> create(
+        @RequestBody @Valid QuizCreateRequest request
     ) {
-        UUID quizUuid = service.createQuiz(createRequest);
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("quizUuid", quizUuid);
-
-        URI location = URI.create("/quiz/" + quizUuid);
-
-        return ResponseEntity.created(location).body(body);
+        UUID uuid = service.createQuiz(request);
+        return ResponseEntity.created(
+            URI.create("/api/v1/quizzes/" + uuid)
+        ).body(Map.of("quizUuid", uuid));
     }
 
     @GetMapping
     public ResponseEntity<List<QuizGetResponse>> getAll() {
-        return service
-            .returnAllQuizzes()
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(service.returnAllQuizzes());
     }
 
     @GetMapping("/{uuid}")
     public ResponseEntity<QuizGetResponse> get(@PathVariable UUID uuid) {
-        return service
-            .returnQuiz(uuid)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(service.returnQuiz(uuid));
     }
 
-    @PatchMapping
-    public ResponseEntity<?> patch(
-        @RequestBody @Valid QuizPatchRequest quizPatch
+    @PatchMapping("/{uuid}")
+    public ResponseEntity<Void> patch(
+        @PathVariable UUID uuid,
+        @RequestBody @Valid QuizPatchRequest request
     ) {
-        service.patchQuiz(quizPatch);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        request.setUuid(uuid);
+        service.patchQuiz(request);
+        return ResponseEntity.ok().build();
     }
 }
