@@ -8,9 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
-import com.sosehl.curtis_backend.dto.receive.QuizPatchRequest;
-import com.sosehl.curtis_backend.services.QuizService;
+import com.sosehl.curtis_backend.domain.v1.quiz.QuizController;
+import com.sosehl.curtis_backend.domain.v1.quiz.QuizService;
+import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizCreateRequest;
+import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizPatchRequest;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

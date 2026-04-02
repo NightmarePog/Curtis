@@ -3,10 +3,11 @@ package com.sosehl.curtis_backend.services;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
-import com.sosehl.curtis_backend.mappers.QuizMapper;
-import com.sosehl.curtis_backend.models.QuizModel;
-import com.sosehl.curtis_backend.repositories.QuizRepository;
+import com.sosehl.curtis_backend.domain.v1.question.QuizModel;
+import com.sosehl.curtis_backend.domain.v1.quiz.QuizMapper;
+import com.sosehl.curtis_backend.domain.v1.quiz.QuizRepository;
+import com.sosehl.curtis_backend.domain.v1.quiz.QuizService;
+import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizCreateRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

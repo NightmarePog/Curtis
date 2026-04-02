@@ -5,10 +5,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sosehl.curtis_backend.dto.receive.QuestionCreateDto;
-import com.sosehl.curtis_backend.dto.receive.QuestionPatchDto;
-import com.sosehl.curtis_backend.models.QuestionModel;
-import com.sosehl.curtis_backend.services.QuestionService;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionController;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionModel;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionService;
+import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionCreateDto;
+import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionPatchDto;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,6 +1,6 @@
 package com.sosehl.curtis_backend.config;
 
-import com.sosehl.curtis_backend.components.CustomOAuth2SuccessHandler;
+import com.sosehl.curtis_backend.common.components.CustomOAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
