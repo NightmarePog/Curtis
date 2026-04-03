@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/v1/quizzes")
+@RequestMapping("/v1/quiz")
 public class QuizController {
 
     private final QuizService service;
@@ -32,9 +32,9 @@ public class QuizController {
         @RequestBody @Valid QuizCreateRequest request
     ) {
         UUID uuid = service.createQuiz(request);
-        return ResponseEntity.created(
-            URI.create("/api/v1/quizzes/" + uuid)
-        ).body(Map.of("quizUuid", uuid));
+        return ResponseEntity.created(URI.create("/v1/quiz/" + uuid)).body(
+            Map.of("quizUuid", uuid)
+        );
     }
 
     @GetMapping
@@ -52,8 +52,7 @@ public class QuizController {
         @PathVariable UUID uuid,
         @RequestBody @Valid QuizPatchRequest request
     ) {
-        request.setUuid(uuid);
-        service.patchQuiz(request);
+        service.patchQuiz(request, uuid);
         return ResponseEntity.ok().build();
     }
 }

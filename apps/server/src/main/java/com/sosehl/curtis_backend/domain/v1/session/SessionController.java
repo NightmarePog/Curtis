@@ -32,7 +32,7 @@ public class SessionController {
             principal
         );
         return ResponseEntity.created(
-            URI.create("/api/v1/sessions/" + sessionUuid)
+            URI.create("/v1/sessions/" + sessionUuid)
         ).body(sessionUuid);
     }
 

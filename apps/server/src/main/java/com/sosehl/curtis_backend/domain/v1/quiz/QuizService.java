@@ -41,9 +41,9 @@ public class QuizService {
         return repository.findAll().stream().map(mapper::toResponse).toList();
     }
 
-    public void patchQuiz(QuizPatchRequest request) {
+    public void patchQuiz(QuizPatchRequest request, UUID uuid) {
         Quiz existing = repository
-            .findByUuid(request.getUuid())
+            .findByUuid(uuid)
             .orElseThrow(() ->
                 new ResponseStatusException(
                     HttpStatus.NOT_FOUND,

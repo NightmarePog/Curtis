@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/quizzes/{quizUuid}/questions")
+@RequestMapping("/v1/quiz/{quizUuid}/questions")
 public class QuestionController {
 
     private final QuestionService service;
@@ -26,7 +26,7 @@ public class QuestionController {
     ) {
         service.create(dto, quizUuid);
         return ResponseEntity.created(
-            URI.create("/api/v1/quizzes/" + quizUuid + "/questions")
+            URI.create("/v1/quiz/" + quizUuid + "/questions")
         ).build();
     }
 
