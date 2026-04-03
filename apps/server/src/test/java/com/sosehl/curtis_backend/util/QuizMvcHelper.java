@@ -3,8 +3,8 @@ package com.sosehl.curtis_backend.util;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
-import com.sosehl.curtis_backend.dto.receive.QuizPatchRequest;
+import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizCreateRequest;
+import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizPatchRequest;
 import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;

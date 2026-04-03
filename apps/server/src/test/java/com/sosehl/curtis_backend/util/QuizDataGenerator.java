@@ -1,6 +1,6 @@
 package com.sosehl.curtis_backend.util;
 
-import com.sosehl.curtis_backend.dto.receive.QuizCreateRequest;
+import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizCreateRequest;
 import java.util.Random;
 
 public class QuizDataGenerator {
