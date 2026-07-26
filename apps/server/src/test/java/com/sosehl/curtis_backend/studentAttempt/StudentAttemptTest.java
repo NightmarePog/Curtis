@@ -6,6 +6,10 @@ import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.session.SessionStatus;
 import com.sosehl.curtis_backend.domain.v1.session.StudentAttempt;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +17,50 @@ import org.junit.jupiter.api.Test;
 class StudentAttemptTest {
 
     private StudentAttempt attempt;
+
+    private static class MutableClock extends Clock {
+
+        private Instant instant;
+
+        MutableClock(Instant instant) {
+            this.instant = instant;
+        }
+
+        void advance(Duration duration) {
+            instant = instant.plus(duration);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneId.systemDefault();
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return instant;
+        }
+    }
+
+    private QuestionResponse timedQuestion(int timeInSeconds) {
+        QuestionAnswer correct = new QuestionAnswer();
+        correct.setAnswer("Java");
+        correct.setIsCorrect(true);
+
+        QuestionAnswer wrong = new QuestionAnswer();
+        wrong.setAnswer("Python");
+        wrong.setIsCorrect(false);
+
+        QuestionResponse question = new QuestionResponse();
+        question.setQuestion("Co je Java?");
+        question.setAnswers(List.of(correct, wrong));
+        question.setTimeInSeconds(timeInSeconds);
+        return question;
+    }
 
     @BeforeEach
     void setUp() {
@@ -77,5 +125,53 @@ class StudentAttemptTest {
         assertThatThrownBy(() -> attempt.nextQuestion()).isInstanceOf(
             IllegalStateException.class
         );
+    }
+
+    @Test
+    void shouldRecordAnswerWithinTimeLimit() {
+        MutableClock clock = new MutableClock(Instant.parse("2024-01-01T00:00:00Z"));
+        StudentAttempt timedAttempt = new StudentAttempt(
+            "student1",
+            List.of(timedQuestion(10)),
+            clock
+        );
+
+        timedAttempt.nextQuestion();
+        clock.advance(Duration.ofSeconds(5));
+        timedAttempt.addAnswer(List.of(0));
+
+        assertThat(timedAttempt.calculateScore()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldDiscardAnswerSubmittedAfterGracePeriod() {
+        MutableClock clock = new MutableClock(Instant.parse("2024-01-01T00:00:00Z"));
+        StudentAttempt timedAttempt = new StudentAttempt(
+            "student1",
+            List.of(timedQuestion(10)),
+            clock
+        );
+
+        timedAttempt.nextQuestion();
+        clock.advance(Duration.ofSeconds(13)); // 10s limit + 2s grace = 12s allowed
+        timedAttempt.addAnswer(List.of(0)); // correct answer, but too late
+
+        assertThat(timedAttempt.calculateScore()).isEqualTo(0);
+    }
+
+    @Test
+    void shouldAcceptAnswerExactlyAtGraceBoundary() {
+        MutableClock clock = new MutableClock(Instant.parse("2024-01-01T00:00:00Z"));
+        StudentAttempt timedAttempt = new StudentAttempt(
+            "student1",
+            List.of(timedQuestion(10)),
+            clock
+        );
+
+        timedAttempt.nextQuestion();
+        clock.advance(Duration.ofSeconds(12)); // exactly 10s + 2s grace
+        timedAttempt.addAnswer(List.of(0));
+
+        assertThat(timedAttempt.calculateScore()).isEqualTo(1);
     }
 }

@@ -3,21 +3,37 @@ package com.sosehl.curtis_backend.domain.v1.session;
 import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.session.exceptions.NoMoreQuestionsException;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
 public class StudentAttempt {
 
+    private static final int GRACE_PERIOD_SECONDS = 2;
+
     private final String studentId;
     private final List<QuestionResponse> questions;
     private final List<List<Integer>> answers = new ArrayList<>();
+    private final Clock clock;
     private int questionIndex = 0;
     private SessionStatus status = SessionStatus.RUNNING;
+    private Instant servedAt;
 
     public StudentAttempt(String studentId, List<QuestionResponse> questions) {
+        this(studentId, questions, Clock.systemDefaultZone());
+    }
+
+    public StudentAttempt(
+        String studentId,
+        List<QuestionResponse> questions,
+        Clock clock
+    ) {
         this.studentId = studentId;
         this.questions = questions;
+        this.clock = clock;
     }
 
     public String getStudentId() {
@@ -47,6 +63,7 @@ public class StudentAttempt {
 
         QuestionResponse question = questions.get(questionIndex);
         questionIndex++;
+        servedAt = clock.instant();
 
         if (questionIndex >= questions.size()) {
             this.status = SessionStatus.ARCHIVED;
@@ -56,7 +73,30 @@ public class StudentAttempt {
     }
 
     public void addAnswer(List<Integer> answer) {
+        if (isAnswerLate()) {
+            answers.add(new ArrayList<>());
+            return;
+        }
         answers.add(answer);
+    }
+
+    private boolean isAnswerLate() {
+        if (servedAt == null || questionIndex == 0) {
+            return false;
+        }
+
+        Integer timeInSeconds = questions
+            .get(questionIndex - 1)
+            .getTimeInSeconds();
+        if (timeInSeconds == null) {
+            return false;
+        }
+
+        Duration allowed = Duration.ofSeconds(
+            timeInSeconds + GRACE_PERIOD_SECONDS
+        );
+        Duration elapsed = Duration.between(servedAt, clock.instant());
+        return elapsed.compareTo(allowed) > 0;
     }
 
     public StudentAttempt finish() {
