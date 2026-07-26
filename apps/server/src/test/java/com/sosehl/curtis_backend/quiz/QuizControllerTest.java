@@ -50,7 +50,11 @@ class QuizControllerTest {
         MvcResult result = mockMvc
             .perform(
                 post("/v1/quiz")
-                    .with(SecurityMockMvcRequestPostProcessors.user("testuser"))
+                    .with(
+                        SecurityMockMvcRequestPostProcessors
+                            .user("testuser")
+                            .roles("TEACHER")
+                    )
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(validRequest()))
             )
@@ -66,7 +70,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldCreateQuiz() throws Exception {
         QuizCreateRequest request = validRequest();
         request.setTitle("Nový kvíz");
@@ -82,7 +86,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldFailCreateWhenTitleIsMissing() throws Exception {
         QuizCreateRequest request = validRequest();
         request.setTitle(null);
@@ -97,7 +101,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldFailCreateWhenTitleIsTooLong() throws Exception {
         QuizCreateRequest request = validRequest();
         request.setTitle("a".repeat(101));
@@ -158,7 +162,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldPatchQuizTitle() throws Exception {
         QuizPatchRequest patch = new QuizPatchRequest();
         patch.setTitle("Upravený název");
@@ -177,7 +181,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldPatchOnlyProvidedFields() throws Exception {
         QuizPatchRequest patch = new QuizPatchRequest();
         patch.setDescription("Nový popis");
@@ -197,7 +201,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldReturnNotFoundWhenPatchingUnknownQuiz() throws Exception {
         QuizPatchRequest patch = new QuizPatchRequest();
         patch.setTitle("Nový název");
