@@ -44,3 +44,6 @@ bin
 build
 /apps/web/.next
 /apps/web/node_modules
+
+# claude code local settings
+.claude/settings.local.json
