@@ -32,11 +32,17 @@ public class EntraOidcUserService
         );
         authorities.addAll(EntraRoleMapper.mapRoles(roles));
 
+        String userNameAttributeName = userRequest
+            .getClientRegistration()
+            .getProviderDetails()
+            .getUserInfoEndpoint()
+            .getUserNameAttributeName();
+
         return new DefaultOidcUser(
             authorities,
             oidcUser.getIdToken(),
             oidcUser.getUserInfo(),
-            "sub"
+            userNameAttributeName != null ? userNameAttributeName : "sub"
         );
     }
 }
