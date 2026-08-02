@@ -53,12 +53,12 @@ public class StudentAttempt {
     }
 
     public QuestionResponse nextQuestion() {
-        if (status != SessionStatus.RUNNING) {
-            throw new IllegalStateException("Pokus již byl ukončen");
-        }
         if (questionIndex >= questions.size()) {
             this.status = SessionStatus.ARCHIVED;
             throw new NoMoreQuestionsException("Žádné další otázky");
+        }
+        if (status != SessionStatus.RUNNING) {
+            throw new IllegalStateException("Pokus již byl ukončen");
         }
 
         QuestionResponse question = questions.get(questionIndex);

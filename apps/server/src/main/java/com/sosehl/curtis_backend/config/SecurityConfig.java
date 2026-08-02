@@ -41,6 +41,11 @@ public class SecurityConfig {
                     .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.POST, "/v1/sessions")
                     .hasRole("TEACHER")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/v1/sessions/*/results"
+                    )
+                    .hasRole("TEACHER")
                     .anyRequest()
                     .authenticated()
             )

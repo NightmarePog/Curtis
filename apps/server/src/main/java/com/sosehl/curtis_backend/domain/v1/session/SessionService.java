@@ -1,5 +1,6 @@
 package com.sosehl.curtis_backend.domain.v1.session;
 
+import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.quiz.QuizMapper;
 import com.sosehl.curtis_backend.domain.v1.quiz.QuizRepository;
@@ -62,7 +63,7 @@ public class SessionService {
         String studentId = principal.getAttribute("sub");
         Session session = getSession(sessionUuid);
         session.join(studentId);
-        return session.nextQuestion(studentId);
+        return maskCorrectAnswers(session.nextQuestion(studentId));
     }
 
     public QuestionResponse next(
@@ -73,7 +74,11 @@ public class SessionService {
         String studentId = principal.getAttribute("sub");
         Session session = getSession(sessionUuid);
         session.submitAnswer(studentId, answer);
-        return session.nextQuestion(studentId);
+        return maskCorrectAnswers(session.nextQuestion(studentId));
+    }
+
+    public List<QuizResult> getResults(UUID sessionUuid) {
+        return quizResultRepository.findBySessionUuid(sessionUuid);
     }
 
     public ResultsResponse finish(UUID sessionUuid, OAuth2User principal) {
@@ -118,5 +123,28 @@ public class SessionService {
             "Session nenalezena"
         );
         return session;
+    }
+
+    private QuestionResponse maskCorrectAnswers(QuestionResponse question) {
+        if (question == null || question.getAnswers() == null) {
+            return question;
+        }
+        QuestionResponse masked = new QuestionResponse();
+        masked.setQuestion(question.getQuestion());
+        masked.setTimeInSeconds(question.getTimeInSeconds());
+        masked.setQuizUuid(question.getQuizUuid());
+        masked.setAnswers(
+            question
+                .getAnswers()
+                .stream()
+                .map(answer -> {
+                    QuestionAnswer clone = new QuestionAnswer();
+                    clone.setAnswer(answer.getAnswer());
+                    clone.setIsCorrect(null);
+                    return clone;
+                })
+                .toList()
+        );
+        return masked;
     }
 }

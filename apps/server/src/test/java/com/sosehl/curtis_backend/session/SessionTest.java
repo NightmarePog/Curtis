@@ -121,8 +121,8 @@ class SessionTest {
         session.nextQuestion("student1"); // 2. otázka
 
         assertThatThrownBy(() -> session.nextQuestion("student1"))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Pokus již byl ukončen");
+            .isInstanceOf(NoMoreQuestionsException.class)
+            .hasMessage("Žádné další otázky");
     }
 
     @Test

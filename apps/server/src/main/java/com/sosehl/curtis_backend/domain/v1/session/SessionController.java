@@ -1,6 +1,7 @@
 package com.sosehl.curtis_backend.domain.v1.session;
 
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
+import com.sosehl.curtis_backend.domain.v1.quizResult.QuizResult;
 import com.sosehl.curtis_backend.domain.v1.quizResult.ResultsResponse;
 import java.net.URI;
 import java.util.List;
@@ -51,6 +52,13 @@ public class SessionController {
         @AuthenticationPrincipal OAuth2User principal
     ) {
         return ResponseEntity.ok(service.next(sessionUuid, answer, principal));
+    }
+
+    @GetMapping("/{sessionUuid}/results")
+    public ResponseEntity<List<QuizResult>> results(
+        @PathVariable UUID sessionUuid
+    ) {
+        return ResponseEntity.ok(service.getResults(sessionUuid));
     }
 
     @PostMapping("/{sessionUuid}/finish")

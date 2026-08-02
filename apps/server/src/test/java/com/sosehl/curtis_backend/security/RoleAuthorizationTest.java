@@ -130,6 +130,31 @@ class RoleAuthorizationTest {
     }
 
     @Test
+    void shouldForbidSessionResultsWithoutTeacherRole() throws Exception {
+        mockMvc
+            .perform(
+                get("/v1/sessions/" + existingQuizUuid + "/results")
+                    .with(SecurityMockMvcRequestPostProcessors.user("student1"))
+            )
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldAllowSessionResultsWithTeacherRole() throws Exception {
+        mockMvc
+            .perform(
+                get("/v1/sessions/" + existingQuizUuid + "/results")
+                    .with(
+                        SecurityMockMvcRequestPostProcessors
+                            .user("teacher3")
+                            .roles("TEACHER")
+                    )
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
     void shouldAllowQuizCreateWithTeacherRole() throws Exception {
         QuizCreateRequest request = new QuizCreateRequest();
         request.setTitle("Teacher Created Quiz");
