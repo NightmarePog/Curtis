@@ -45,7 +45,7 @@ docker run -d \
   -e POSTGRES_PASSWORD=curtispass \
   -p $PORT:5432 \
   -v pgdata:/var/lib/postgresql/data \
-  postgres:17
+  postgres:16-alpine
 
 echo "⏳ Waiting for database to be ready..."
 
