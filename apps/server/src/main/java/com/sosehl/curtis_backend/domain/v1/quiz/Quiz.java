@@ -1,12 +1,12 @@
 package com.sosehl.curtis_backend.domain.v1.quiz;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sosehl.curtis_backend.domain.v1.question.Question;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.Data;
-import net.minidev.json.annotate.JsonIgnore;
 
 @Data
 @Entity

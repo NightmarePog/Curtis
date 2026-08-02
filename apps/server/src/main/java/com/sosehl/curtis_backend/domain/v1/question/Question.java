@@ -1,10 +1,10 @@
 package com.sosehl.curtis_backend.domain.v1.question;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sosehl.curtis_backend.domain.v1.quiz.Quiz;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.Data;
-import net.minidev.json.annotate.JsonIgnore;
 
 @Data
 @Entity
