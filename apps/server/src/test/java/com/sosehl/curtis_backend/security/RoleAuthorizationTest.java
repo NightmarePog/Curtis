@@ -140,6 +140,55 @@ class RoleAuthorizationTest {
     }
 
     @Test
+    void shouldForbidQuizReadsWithoutTeacherRole() throws Exception {
+        mockMvc
+            .perform(
+                get("/v1/quiz").with(
+                    SecurityMockMvcRequestPostProcessors.user("student1")
+                )
+            )
+            .andExpect(status().isForbidden());
+        mockMvc
+            .perform(
+                get("/v1/quiz/" + existingQuizUuid).with(
+                    SecurityMockMvcRequestPostProcessors.user("student1")
+                )
+            )
+            .andExpect(status().isForbidden());
+        mockMvc
+            .perform(
+                get("/v1/quiz/" + existingQuizUuid + "/questions").with(
+                    SecurityMockMvcRequestPostProcessors.user("student1")
+                )
+            )
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldAllowQuizReadsWithTeacherRole() throws Exception {
+        mockMvc
+            .perform(
+                get("/v1/quiz").with(
+                    SecurityMockMvcRequestPostProcessors
+                        .user("teacher4")
+                        .roles("TEACHER")
+                )
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+        mockMvc
+            .perform(
+                get("/v1/quiz/" + existingQuizUuid + "/questions").with(
+                    SecurityMockMvcRequestPostProcessors
+                        .user("teacher4")
+                        .roles("TEACHER")
+                )
+            )
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
     void shouldAllowSessionResultsWithTeacherRole() throws Exception {
         mockMvc
             .perform(

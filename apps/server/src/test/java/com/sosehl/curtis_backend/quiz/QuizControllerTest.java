@@ -129,7 +129,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldGetQuizByUuid() throws Exception {
         mockMvc
             .perform(get("/v1/quiz/" + createdQuizUuid))
@@ -139,7 +139,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldReturnNotFoundForUnknownUuid() throws Exception {
         mockMvc
             .perform(get("/v1/quiz/" + UUID.randomUUID()))
@@ -147,7 +147,7 @@ class QuizControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(authorities = "ROLE_TEACHER")
     void shouldReturnAllQuizzes() throws Exception {
         mockMvc
             .perform(get("/v1/quiz"))

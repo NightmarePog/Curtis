@@ -26,11 +26,5 @@ public class CurtisBackendApplication {
             "spring.security.oauth2.client.registration.microsoft.client-secret",
             clientSecret
         );
-
-        System.out.println(
-            System.getProperty(
-                "spring.security.oauth2.client.registration.microsoft.client-secret"
-            )
-        );
     }
 }

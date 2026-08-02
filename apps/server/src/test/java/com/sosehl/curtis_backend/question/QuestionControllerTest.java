@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -63,7 +64,13 @@ class QuestionControllerTest {
     void returnsQuestionsWithoutEmbeddedQuiz() throws Exception {
         mockMvc
             .perform(
-                get("/v1/quiz/{uuid}/questions", quizUuid).with(oidcLogin())
+                get("/v1/quiz/{uuid}/questions", quizUuid)
+                    .with(
+                        oidcLogin()
+                            .authorities(
+                                new SimpleGrantedAuthority("ROLE_TEACHER")
+                            )
+                    )
             )
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].id").value(1))

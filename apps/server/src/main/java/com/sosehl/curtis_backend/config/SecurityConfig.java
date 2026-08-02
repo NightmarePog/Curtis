@@ -32,6 +32,15 @@ public class SecurityConfig {
                 auth
                     .requestMatchers("/error")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/v1/quiz")
+                    .hasRole("TEACHER")
+                    .requestMatchers(HttpMethod.GET, "/v1/quiz/*")
+                    .hasRole("TEACHER")
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "/v1/quiz/*/questions"
+                    )
+                    .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.POST, "/v1/quiz")
                     .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.PATCH, "/v1/quiz/*")
