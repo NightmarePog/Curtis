@@ -4,12 +4,24 @@ import type {
   QuestionCreateDto,
   QuestionPatchDto,
   QuestionResponse,
+  PendingTextAnswer,
   Quiz,
   QuizCreateRequest,
   QuizPatchRequest,
   QuizResult,
   ResultsResponse,
+  QuestionSubmission,
 } from "./types";
+
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}
 
 const BASE = "/api";
 
@@ -17,10 +29,12 @@ async function request<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
+  const isFormData =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
   const response = await fetch(`${BASE}${path}`, {
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers ?? {}),
     },
     ...init,
@@ -49,13 +63,19 @@ async function request<T>(
     return undefined as T;
   }
 
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 
 export const api = {
   me: () => request<Me>("/v1/me"),
 
-  listQuizzes: () => request<Quiz[]>("/v1/quiz"),
+  listQuizzes: (page = 0, size = 20) =>
+    request<Page<Quiz>>(`/v1/quiz?page=${page}&size=${size}`),
+  listAvailableQuizzes: () => request<Quiz[]>("/v1/quiz?available=true"),
   getQuiz: (uuid: string) => request<Quiz>(`/v1/quiz/${uuid}`),
   createQuiz: (body: QuizCreateRequest) =>
     request<{ quizUuid: string }>("/v1/quiz", {
@@ -66,6 +86,15 @@ export const api = {
     request<void>(`/v1/quiz/${uuid}`, {
       method: "PATCH",
       body: JSON.stringify(body),
+    }),
+  deleteQuiz: (uuid: string) =>
+    request<void>(`/v1/quiz/${uuid}`, {
+      method: "DELETE",
+    }),
+  importQuiz: (formData: FormData) =>
+    request<{ quizUuid: string }>("/v1/quiz/import", {
+      method: "POST",
+      body: formData,
     }),
 
   listQuestions: (quizUuid: string) =>
@@ -102,7 +131,7 @@ export const api = {
     request<QuestionResponse>(`/v1/sessions/${sessionUuid}/join`, {
       method: "POST",
     }),
-  nextQuestion: (sessionUuid: string, answer: number[]) =>
+  nextQuestion: (sessionUuid: string, answer: QuestionSubmission) =>
     request<QuestionResponse>(`/v1/sessions/${sessionUuid}/next`, {
       method: "POST",
       body: JSON.stringify(answer),
@@ -113,6 +142,19 @@ export const api = {
     }),
   sessionResults: (sessionUuid: string) =>
     request<QuizResult[]>(`/v1/sessions/${sessionUuid}/results`),
+  myResults: () => request<QuizResult[]>("/v1/sessions/my-results"),
+  pendingTextAnswers: (sessionUuid: string) =>
+    request<PendingTextAnswer[]>(
+      `/v1/sessions/${sessionUuid}/pending-text-answers`
+    ),
+  gradeTextAnswer: (sessionUuid: string, resultId: number, awardedPoints: number) =>
+    request<PendingTextAnswer>(
+      `/v1/sessions/${sessionUuid}/text-answers/${resultId}/grade`,
+      {
+        method: "POST",
+        body: JSON.stringify({ awardedPoints }),
+      }
+    ),
 };
 
 export const LOGIN_URL = `${BASE}/login`;

@@ -24,7 +24,7 @@ class EntraRoleMapperTest {
     @Test
     void shouldMapTeacherRole() {
         Set<GrantedAuthority> authorities = EntraRoleMapper.mapRoles(
-            List.of("Teacher")
+            List.of("teachers")
         );
         assertThat(authorities).containsExactly(
             new SimpleGrantedAuthority("ROLE_TEACHER")
@@ -34,7 +34,7 @@ class EntraRoleMapperTest {
     @Test
     void shouldMapStudentRole() {
         Set<GrantedAuthority> authorities = EntraRoleMapper.mapRoles(
-            List.of("Student")
+            List.of("students")
         );
         assertThat(authorities).containsExactly(
             new SimpleGrantedAuthority("ROLE_STUDENT")
@@ -44,7 +44,7 @@ class EntraRoleMapperTest {
     @Test
     void shouldMapBothRolesWhenPresent() {
         Set<GrantedAuthority> authorities = EntraRoleMapper.mapRoles(
-            List.of("Teacher", "Student")
+            List.of("teachers", "students")
         );
         assertThat(authorities).containsExactlyInAnyOrder(
             new SimpleGrantedAuthority("ROLE_TEACHER"),

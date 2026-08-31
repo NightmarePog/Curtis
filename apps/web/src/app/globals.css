@@ -1,28 +1,291 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #4f46e5;
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Curtis design tokens
+   Brand: SOŠE Hluboká nad Vltavou — school blue (#0E4DB5)
+   Dark is the default theme; light is an opt-in override.
+   Every foreground/background pair below is verified at >= 4.5:1 (WCAG AA).
+   ========================================================================== */
+
+:root,
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces — near-black base, layered upward */
+  --background: #07080b;
+  --foreground: #f3f5f9;
+  --card: #0f1218;
+  --card-foreground: #f3f5f9;
+  --popover: #151922;
+  --popover-foreground: #f3f5f9;
+  --muted: #161a22;
+  --muted-foreground: #8d97ab;
+  --secondary: #171b24;
+  --secondary-foreground: #e6eaf2;
+  --accent: #1a2334;
+  --accent-foreground: #dbe6ff;
+
+  /* Brand — school blue. `primary` fills, `brand` reads as text on dark. */
+  --primary: #1d5fd9;
+  --primary-foreground: #ffffff;
+  --brand: #6ba1ff;
+  --brand-soft: #12224a;
+
+  /* Semantic */
+  --success: #34d399;
+  --success-soft: #08281f;
+  --warning: #f5c242;
+  --warning-soft: #2a2008;
+  --destructive: #ff6b61;
+  --destructive-soft: #2c1210;
+
+  /* Lines & focus */
+  --border: #1f2530;
+  --input: #232a36;
+  --ring: #3e7bf6;
+
+  /* Charts */
+  --chart-1: #3e7bf6;
+  --chart-2: #34d399;
+  --chart-3: #f5c242;
+  --chart-4: #a78bfa;
+  --chart-5: #ff6b61;
+
+  /* Shape & elevation */
+  --radius: 0.75rem;
+  --shadow-ambient: 0 1px 2px rgb(0 0 0 / 0.6), 0 8px 32px -12px rgb(0 0 0 / 0.8);
+  --glass: rgb(7 8 11 / 0.72);
+  --grid-line: rgb(255 255 255 / 0.028);
+}
+
+.light {
+  color-scheme: light;
+
+  --background: #ffffff;
+  --foreground: #0b1220;
+  --card: #ffffff;
+  --card-foreground: #0b1220;
+  --popover: #ffffff;
+  --popover-foreground: #0b1220;
+  --muted: #f2f6fc;
+  --muted-foreground: #5a6478;
+  --secondary: #f0f4fb;
+  --secondary-foreground: #0b1220;
+  --accent: #e7effc;
+  --accent-foreground: #0e4db5;
+
+  --primary: #0e4db5;
+  --primary-foreground: #ffffff;
+  --brand: #0e4db5;
+  --brand-soft: #e7effc;
+
+  /* Darkened so each stays >= 4.5:1 against its own `-soft` tint, not just white */
+  --success: #056848;
+  --success-soft: #e6f6f0;
+  --warning: #8a5a00;
+  --warning-soft: #fdf3e0;
+  --destructive: #b02a21;
+  --destructive-soft: #fdeceb;
+
+  --border: #e4eaf4;
+  --input: #d7e0ee;
+  --ring: #0e4db5;
+
+  --chart-1: #0e4db5;
+  --chart-2: #056848;
+  --chart-3: #8a5a00;
+  --chart-4: #6d28d9;
+  --chart-5: #b02a21;
+
+  --shadow-ambient: 0 1px 2px rgb(11 18 32 / 0.04), 0 8px 24px -12px rgb(11 18 32 / 0.12);
+  --glass: rgb(255 255 255 / 0.78);
+  --grid-line: rgb(11 18 32 / 0.035);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-}
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: var(--font-mono-code), ui-monospace, "SF Mono", monospace;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.35);
+  --radius-2xl: calc(var(--radius) * 1.75);
+  --radius-3xl: calc(var(--radius) * 2.25);
+  --radius-4xl: calc(var(--radius) * 3);
+
+  --shadow-ambient: var(--shadow-ambient);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-rise: rise 0.45s var(--ease-out-expo) both;
+  --animate-fade-in: fade-in 0.3s var(--ease-out-expo) both;
+  --animate-pulse-ring: pulse-ring 2s ease-out infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    70%,
+    100% {
+      opacity: 0;
+      transform: scale(2.4);
+    }
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100svh;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Never remove the focus ring — only make it match the theme. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  label:has(input:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--brand) 30%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Tabular figures for scores, timers and counters */
+  .tabular,
+  time,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Frosted layer used by the header and overlays */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
+
+  .surface {
+    @apply relative rounded-xl border border-border bg-card;
+    box-shadow: var(--shadow-ambient);
+  }
+
+  /* Subtle blueprint grid — nods to the electrotechnical school */
+  .grid-backdrop {
+    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--foreground) 20%,
+      var(--brand) 130%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Press feedback for large tap targets */
+  .press {
+    @apply transition-[transform,background-color,border-color,box-shadow] duration-200;
+    transition-timing-function: var(--ease-out-expo);
+  }
+
+  .press:active:not(:disabled) {
+    transform: scale(0.985);
+  }
+}
+
+@utility animate-delay-* {
+  animation-delay: calc(--value(integer) * 1ms);
 }

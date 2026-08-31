@@ -1,6 +1,8 @@
 package com.sosehl.curtis_backend.domain.v1.session;
 
 import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
+import com.sosehl.curtis_backend.domain.v1.question.MatchingPair;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionType;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.session.exceptions.NoMoreQuestionsException;
 import java.time.Clock;
@@ -9,6 +11,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class StudentAttempt {
 
@@ -16,7 +21,7 @@ public class StudentAttempt {
 
     private final String studentId;
     private final List<QuestionResponse> questions;
-    private final List<List<Integer>> answers = new ArrayList<>();
+    private final List<QuestionSubmission> submissions = new ArrayList<>();
     private final Clock clock;
     private int questionIndex = 0;
     private SessionStatus status = SessionStatus.RUNNING;
@@ -49,7 +54,13 @@ public class StudentAttempt {
     }
 
     public List<List<Integer>> getAnswers() {
-        return answers;
+        return submissions
+            .stream()
+            .map(submission -> {
+                List<Integer> indexes = submission.getSelectedIndexes();
+                return indexes == null ? new ArrayList<Integer>() : indexes;
+            })
+            .toList();
     }
 
     public QuestionResponse nextQuestion() {
@@ -73,11 +84,27 @@ public class StudentAttempt {
     }
 
     public void addAnswer(List<Integer> answer) {
+        QuestionSubmission submission = QuestionSubmission.multipleChoice(answer);
+        if (questionIndex > 0 && effectiveType(questions.get(questionIndex - 1)) == QuestionType.FREE_TEXT) {
+            submission.setType(QuestionType.FREE_TEXT);
+            submission.setText("");
+        }
+        addSubmission(submission);
+    }
+
+    public void addSubmission(QuestionSubmission submission) {
+        QuestionResponse question = questions.get(questionIndex - 1);
         if (isAnswerLate()) {
-            answers.add(new ArrayList<>());
+            QuestionSubmission late = new QuestionSubmission();
+            late.setType(effectiveType(question));
+            late.setSelectedIndexes(new ArrayList<>());
+            late.setPairs(new ArrayList<>());
+            submissions.add(late);
             return;
         }
-        answers.add(answer);
+
+        validateSubmission(question, submission);
+        submissions.add(submission);
     }
 
     private boolean isAnswerLate() {
@@ -107,21 +134,126 @@ public class StudentAttempt {
     public int calculateScore() {
         int score = 0;
         for (int i = 0; i < questions.size(); i++) {
-            List<QuestionAnswer> answers = questions.get(i).getAnswers();
-            List<Integer> correct = new ArrayList<>();
-            for (int j = 0; j < answers.size(); j++) {
-                if (
-                    Boolean.TRUE.equals(answers.get(j).getIsCorrect())
-                ) correct.add(j);
-            }
-            List<Integer> userAnswer =
-                this.answers.size() > i
-                    ? this.answers.get(i)
-                    : new ArrayList<>();
-            if (
-                new HashSet<>(correct).equals(new HashSet<>(userAnswer))
-            ) score++;
+            Integer awarded = autoAwardedPoints(i);
+            if (awarded != null) score += awarded;
         }
         return score;
+    }
+
+    public Integer autoAwardedPoints(int questionIndex) {
+        if (questionIndex < 0 || questionIndex >= questions.size()) {
+            throw new IllegalArgumentException("Neplatný index otázky");
+        }
+        QuestionResponse question = questions.get(questionIndex);
+        QuestionType type = effectiveType(question);
+        if (type == QuestionType.FREE_TEXT) return null;
+        if (submissions.size() <= questionIndex) return 0;
+
+        QuestionSubmission submission = submissions.get(questionIndex);
+        boolean correct = type == QuestionType.MULTIPLE_CHOICE
+            ? isMultipleChoiceCorrect(question, submission)
+            : isMatchingCorrect(question, submission);
+        return correct ? pointsFor(question) : 0;
+    }
+
+    public List<QuestionSubmission> getSubmissions() {
+        return submissions;
+    }
+
+    private void validateSubmission(
+        QuestionResponse question,
+        QuestionSubmission submission
+    ) {
+        if (submission == null || submission.getType() == null) {
+            throw new IllegalArgumentException("Typ odpovědi musí být vyplněn");
+        }
+
+        QuestionType type = effectiveType(question);
+        if (submission.getType() != type) {
+            throw new IllegalArgumentException("Typ odpovědi neodpovídá otázce");
+        }
+
+        if (type == QuestionType.MULTIPLE_CHOICE) {
+            List<Integer> indexes = submission.getSelectedIndexes();
+            if (indexes == null || new HashSet<>(indexes).size() != indexes.size()) {
+                throw new IllegalArgumentException("selectedIndexes jsou neplatné");
+            }
+            int answerCount = question.getAnswers() == null ? 0 : question.getAnswers().size();
+            if (indexes.stream().anyMatch(index -> index == null || index < 0 || index >= answerCount)) {
+                throw new IllegalArgumentException("selectedIndexes obsahuje neplatný index");
+            }
+        } else if (type == QuestionType.MATCHING) {
+            List<MatchingSubmissionPair> pairs = submission.getPairs();
+            int pairCount = question.getPairs() == null ? 0 : question.getPairs().size();
+            if (pairs == null || pairs.size() != pairCount) {
+                throw new IllegalArgumentException("pairs musí obsahovat všechny dvojice");
+            }
+            Set<Integer> leftIndexes = new HashSet<>();
+            Set<Integer> rightIndexes = new HashSet<>();
+            for (MatchingSubmissionPair pair : pairs) {
+                if (
+                    pair == null ||
+                    pair.getLeftIndex() == null ||
+                    pair.getRightIndex() == null ||
+                    pair.getLeftIndex() < 0 ||
+                    pair.getLeftIndex() >= pairCount ||
+                    pair.getRightIndex() < 0 ||
+                    pair.getRightIndex() >= pairCount ||
+                    !leftIndexes.add(pair.getLeftIndex()) ||
+                    !rightIndexes.add(pair.getRightIndex())
+                ) {
+                    throw new IllegalArgumentException("pairs obsahují neplatné indexy");
+                }
+            }
+        } else if (submission.getText() == null) {
+            throw new IllegalArgumentException("Textová odpověď musí být vyplněna");
+        }
+    }
+
+    private boolean isMultipleChoiceCorrect(
+        QuestionResponse question,
+        QuestionSubmission submission
+    ) {
+        List<QuestionAnswer> answers = question.getAnswers() == null
+            ? List.of()
+            : question.getAnswers();
+        List<Integer> correct = new ArrayList<>();
+        for (int i = 0; i < answers.size(); i++) {
+            if (Boolean.TRUE.equals(answers.get(i).getIsCorrect())) {
+                correct.add(i);
+            }
+        }
+        return new HashSet<>(correct).equals(new HashSet<>(submission.getSelectedIndexes()));
+    }
+
+    private boolean isMatchingCorrect(
+        QuestionResponse question,
+        QuestionSubmission submission
+    ) {
+        List<MatchingPair> pairs = question.getPairs() == null
+            ? List.of()
+            : question.getPairs();
+        Map<Integer, Integer> expected = new java.util.HashMap<>();
+        for (int i = 0; i < pairs.size(); i++) {
+            expected.put(i, i);
+        }
+        Map<Integer, Integer> actual = submission
+            .getPairs()
+            .stream()
+            .collect(Collectors.toMap(
+                MatchingSubmissionPair::getLeftIndex,
+                MatchingSubmissionPair::getRightIndex
+            ));
+        return expected.equals(actual);
+    }
+
+    private QuestionType effectiveType(QuestionResponse question) {
+        return question.getType() == null
+            ? QuestionType.MULTIPLE_CHOICE
+            : question.getType();
+    }
+
+    private int pointsFor(QuestionResponse question) {
+        return question.getPoints() == null ? 1 : question.getPoints();
     }
 }

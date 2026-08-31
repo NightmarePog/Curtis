@@ -1,6 +1,8 @@
 package com.sosehl.curtis_backend.domain.v1.quiz.dto;
 
+import com.sosehl.curtis_backend.domain.v1.quiz.QuizStatus;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.Data;
@@ -14,4 +16,9 @@ public class QuizGetResponse {
     List<QuestionResponse> questions;
     Integer maxQuestionsPerSession;
     Boolean shuffle;
+    QuizStatus status;
+    LocalDateTime createdAt;
+    LocalDateTime editedAt;
+    LocalDateTime validFrom;
+    LocalDateTime validTo;
 }

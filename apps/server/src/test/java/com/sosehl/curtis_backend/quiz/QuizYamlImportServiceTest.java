@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import com.sosehl.curtis_backend.domain.v1.quiz.Quiz;
 import com.sosehl.curtis_backend.domain.v1.quiz.QuizRepository;
 import com.sosehl.curtis_backend.domain.v1.quiz.QuizYamlImportService;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -107,6 +108,121 @@ class QuizYamlImportServiceTest {
         assertThat(saved).isPresent();
         assertThat(saved.get().getQuestions()).hasSize(1);
         assertThat(saved.get().getQuestions().get(0).getAnswers()).hasSize(3);
+        assertThat(saved.get().getQuestions().get(0).getType())
+            .isEqualTo(QuestionType.MULTIPLE_CHOICE);
+        assertThat(saved.get().getQuestions().get(0).getPoints()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldImportMatchingQuestionMetadataAndPairs() throws IOException {
+        Path file = writeYaml(
+            "matching.yaml",
+            """
+            title: "Matching Quiz"
+            maxQuestionsPerSession: 5
+            questions:
+              - question: "Match the terms"
+                type: MATCHING
+                points: 3
+                timeInSeconds: 30
+                codeSnippet: "const answer = 42;"
+                imageRef: "diagram.png"
+                pairs:
+                  - left: "one"
+                    right: "1"
+                  - left: "two"
+                    right: "2"
+            """
+        );
+
+        importService.processFile(file);
+
+        Quiz saved = quizRepository
+            .findAll()
+            .stream()
+            .filter(q -> "Matching Quiz".equals(q.getTitle()))
+            .findFirst()
+            .orElseThrow();
+        var question = saved.getQuestions().get(0);
+        assertThat(question.getType()).isEqualTo(QuestionType.MATCHING);
+        assertThat(question.getPoints()).isEqualTo(3);
+        assertThat(question.getCodeSnippet()).isEqualTo("const answer = 42;");
+        assertThat(question.getImageRef()).isEqualTo("diagram.png");
+        assertThat(question.getPairs())
+            .extracting("left", "right")
+            .containsExactly(
+                org.assertj.core.groups.Tuple.tuple("one", "1"),
+                org.assertj.core.groups.Tuple.tuple("two", "2")
+            );
+    }
+
+    @Test
+    void shouldRejectMatchingQuestionWithoutPairs() throws IOException {
+        Path file = writeYaml(
+            "missing-pairs.yaml",
+            """
+            title: "Bad Matching Quiz"
+            maxQuestionsPerSession: 5
+            questions:
+              - question: "Match the terms"
+                type: MATCHING
+                timeInSeconds: 30
+            """
+        );
+
+        importService.processFile(file);
+
+        assertThat(countFilesIn(importDir.resolve("failed"))).isEqualTo(2);
+    }
+
+    @Test
+    void shouldImportFreeTextQuestionWithoutOptions() throws IOException {
+        Path file = writeYaml(
+            "free-text.yaml",
+            """
+            title: "Free Text Quiz"
+            maxQuestionsPerSession: 5
+            questions:
+              - question: "Explain the answer"
+                type: FREE_TEXT
+                points: 2
+                timeInSeconds: 60
+            """
+        );
+
+        importService.processFile(file);
+
+        Quiz saved = quizRepository
+            .findAll()
+            .stream()
+            .filter(q -> "Free Text Quiz".equals(q.getTitle()))
+            .findFirst()
+            .orElseThrow();
+        var question = saved.getQuestions().get(0);
+        assertThat(question.getType()).isEqualTo(QuestionType.FREE_TEXT);
+        assertThat(question.getPoints()).isEqualTo(2);
+        assertThat(question.getAnswers()).isEmpty();
+    }
+
+    @Test
+    void shouldRejectImagePathInYaml() throws IOException {
+        Path file = writeYaml(
+            "bad-image.yaml",
+            """
+            title: "Bad Image Quiz"
+            maxQuestionsPerSession: 5
+            questions:
+              - question: "Pick one"
+                timeInSeconds: 10
+                imageRef: "../secret.png"
+                options: ["A", "B"]
+                correctIndexes: [0]
+            """
+        );
+
+        importService.processFile(file);
+
+        assertThat(countFilesIn(importDir.resolve("failed"))).isEqualTo(2);
     }
 
     @Test

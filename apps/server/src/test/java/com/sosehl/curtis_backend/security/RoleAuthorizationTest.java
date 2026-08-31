@@ -140,28 +140,57 @@ class RoleAuthorizationTest {
     }
 
     @Test
-    void shouldForbidQuizReadsWithoutTeacherRole() throws Exception {
+    void shouldForbidPendingTextAnswersWithoutTeacherRole() throws Exception {
+        mockMvc
+            .perform(
+                get("/v1/sessions/" + existingQuizUuid + "/pending-text-answers")
+                    .with(SecurityMockMvcRequestPostProcessors.user("student1"))
+            )
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldForbidYamlImportWithoutTeacherRole() throws Exception {
+        mockMvc
+            .perform(
+                multipart("/v1/quiz/import")
+                    .file(
+                        new org.springframework.mock.web.MockMultipartFile(
+                            "file",
+                            "quiz.yaml",
+                            "application/yaml",
+                            "title: Quiz\nmaxQuestionsPerSession: 1\nquestions: []\n".getBytes()
+                        )
+                    )
+                    .with(SecurityMockMvcRequestPostProcessors.user("student1"))
+            )
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldAllowQuizReadsWithoutTeacherRole() throws Exception {
+        // Students can now view quizzes (for session joining)
         mockMvc
             .perform(
                 get("/v1/quiz").with(
                     SecurityMockMvcRequestPostProcessors.user("student1")
                 )
             )
-            .andExpect(status().isForbidden());
+            .andExpect(status().isOk());
         mockMvc
             .perform(
                 get("/v1/quiz/" + existingQuizUuid).with(
                     SecurityMockMvcRequestPostProcessors.user("student1")
                 )
             )
-            .andExpect(status().isForbidden());
+            .andExpect(status().isOk());
         mockMvc
             .perform(
                 get("/v1/quiz/" + existingQuizUuid + "/questions").with(
                     SecurityMockMvcRequestPostProcessors.user("student1")
                 )
             )
-            .andExpect(status().isForbidden());
+            .andExpect(status().isOk());
     }
 
     @Test
@@ -174,8 +203,7 @@ class RoleAuthorizationTest {
                         .roles("TEACHER")
                 )
             )
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray());
+            .andExpect(status().isOk());
         mockMvc
             .perform(
                 get("/v1/quiz/" + existingQuizUuid + "/questions").with(

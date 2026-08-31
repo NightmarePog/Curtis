@@ -27,7 +27,6 @@ public interface QuizMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "editedAt", ignore = true)
     @Mapping(target = "questions", ignore = true)
     void updateFromPatch(QuizPatchRequest request, @MappingTarget Quiz quiz);
 }

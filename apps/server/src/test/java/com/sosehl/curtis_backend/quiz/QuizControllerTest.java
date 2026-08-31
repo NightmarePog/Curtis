@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.ActiveProfiles;
@@ -20,6 +21,10 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.Path;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -27,6 +32,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @TestPropertySource(locations = "classpath:application-test.properties")
 class QuizControllerTest {
+
+    @TempDir
+    static Path mediaDir;
+
+    @DynamicPropertySource
+    static void mediaProperties(DynamicPropertyRegistry registry) {
+        registry.add("quiz.media.path", mediaDir::toString);
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -125,7 +138,7 @@ class QuizControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request))
             )
-            .andExpect(status().isFound());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -152,13 +165,15 @@ class QuizControllerTest {
         mockMvc
             .perform(get("/v1/quiz"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$.length()").value(1));
+            .andExpect(jsonPath("$.content").isArray())
+            .andExpect(jsonPath("$.content.length()").value(1))
+            .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
-    void shouldRedirectGetWhenNotAuthenticated() throws Exception {
-        mockMvc.perform(get("/v1/quiz")).andExpect(status().isFound());
+    void shouldAllowPublicQuizListing() throws Exception {
+        // Quiz listing is now public so students can browse available quizzes
+        mockMvc.perform(get("/v1/quiz")).andExpect(status().isOk());
     }
 
     @Test
@@ -216,7 +231,7 @@ class QuizControllerTest {
     }
 
     @Test
-    void shouldRedirectPatchWhenNotAuthenticated() throws Exception {
+    void shouldReturnUnauthorizedPatchWhenNotAuthenticated() throws Exception {
         QuizPatchRequest patch = new QuizPatchRequest();
         patch.setTitle("Nový název");
 
@@ -226,6 +241,71 @@ class QuizControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(patch))
             )
-            .andExpect(status().isFound());
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_TEACHER")
+    void shouldImportYamlWithImageAttachment() throws Exception {
+        MockMultipartFile yaml = new MockMultipartFile(
+            "file",
+            "quiz.yaml",
+            "application/yaml",
+            """
+            title: "Uploaded quiz"
+            maxQuestionsPerSession: 5
+            questions:
+              - question: "Pick one"
+                timeInSeconds: 10
+                imageRef: "diagram.png"
+                options: ["A", "B"]
+                correctIndexes: [0]
+            """.getBytes()
+        );
+        MockMultipartFile image = new MockMultipartFile(
+            "images",
+            "diagram.png",
+            "image/png",
+            new byte[] { 1, 2, 3 }
+        );
+
+        mockMvc
+            .perform(multipart("/v1/quiz/import").file(yaml).file(image))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.quizUuid").isNotEmpty());
+
+        org.assertj.core.api.Assertions.assertThat(
+            java.nio.file.Files.readAllBytes(mediaDir.resolve("diagram.png"))
+        ).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_TEACHER")
+    void shouldRejectUnsafeImageAttachmentName() throws Exception {
+        MockMultipartFile yaml = new MockMultipartFile(
+            "file",
+            "quiz.yaml",
+            "application/yaml",
+            """
+            title: "Uploaded quiz"
+            maxQuestionsPerSession: 5
+            questions:
+              - question: "Pick one"
+                timeInSeconds: 10
+                imageRef: "diagram.png"
+                options: ["A", "B"]
+                correctIndexes: [0]
+            """.getBytes()
+        );
+        MockMultipartFile image = new MockMultipartFile(
+            "images",
+            "../secret.png",
+            "image/png",
+            new byte[] { 1 }
+        );
+
+        mockMvc
+            .perform(multipart("/v1/quiz/import").file(yaml).file(image))
+            .andExpect(status().isBadRequest());
     }
 }

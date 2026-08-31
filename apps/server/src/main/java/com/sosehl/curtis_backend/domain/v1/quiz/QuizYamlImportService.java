@@ -3,12 +3,15 @@ package com.sosehl.curtis_backend.domain.v1.quiz;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.sosehl.curtis_backend.domain.v1.question.Question;
 import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
+import com.sosehl.curtis_backend.domain.v1.question.MatchingPair;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionType;
 import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuestionYamlDto;
 import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizYamlDto;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class QuizYamlImportService {
@@ -46,9 +50,13 @@ public class QuizYamlImportService {
     @Value("${quiz.import.path:./import}")
     private String importPathProperty;
 
+    @Value("${quiz.media.path:./media}")
+    private String mediaPathProperty;
+
     private Path importPath;
     private Path processedPath;
     private Path failedPath;
+    private Path mediaPath;
 
     public QuizYamlImportService(
         QuizRepository quizRepository,
@@ -60,6 +68,8 @@ public class QuizYamlImportService {
 
     @PostConstruct
     void init() throws IOException {
+        mediaPath = Paths.get(mediaPathProperty).toAbsolutePath().normalize();
+        Files.createDirectories(mediaPath);
         if (!importEnabled) {
             return;
         }
@@ -92,24 +102,56 @@ public class QuizYamlImportService {
     }
 
     public void processFile(Path file) {
-        QuizYamlDto dto;
-        try {
-            dto = yamlMapper.readValue(file.toFile(), QuizYamlDto.class);
-            validate(dto);
-        } catch (Exception e) {
-            moveToFailed(file, describe(e));
-            return;
-        }
-
         UUID quizUuid;
         try {
-            quizUuid = importQuiz(dto);
+            try (InputStream input = Files.newInputStream(file)) {
+                quizUuid = importYaml(input);
+            }
         } catch (Exception e) {
             moveToFailed(file, describe(e));
             return;
         }
-
         moveToProcessed(file, quizUuid);
+    }
+
+    public UUID importYaml(InputStream input) throws IOException {
+        QuizYamlDto dto = yamlMapper.readValue(input, QuizYamlDto.class);
+        validate(dto);
+        return importQuiz(dto);
+    }
+
+    public UUID importUploaded(
+        MultipartFile yaml,
+        List<MultipartFile> images
+    ) throws IOException {
+        if (yaml == null || yaml.isEmpty()) {
+            throw new IllegalArgumentException("YAML soubor musí být vyplněn");
+        }
+
+        QuizYamlDto dto;
+        try (InputStream input = yaml.getInputStream()) {
+            dto = yamlMapper.readValue(input, QuizYamlDto.class);
+        }
+        validate(dto);
+        List<MultipartFile> attachments = images == null ? List.of() : images;
+        Set<String> names = new java.util.HashSet<>();
+        for (MultipartFile image : attachments) {
+            String filename = safeFilename(image.getOriginalFilename());
+            if (!names.add(filename)) {
+                throw new IllegalArgumentException("Příloha se opakuje: " + filename);
+            }
+        }
+
+        UUID quizUuid = importQuiz(dto);
+        for (MultipartFile image : attachments) {
+            String filename = safeFilename(image.getOriginalFilename());
+            Files.copy(
+                image.getInputStream(),
+                mediaPath.resolve(filename),
+                StandardCopyOption.REPLACE_EXISTING
+            );
+        }
+        return quizUuid;
     }
 
     private boolean isYamlFile(Path path) {
@@ -133,17 +175,40 @@ public class QuizYamlImportService {
         List<QuestionYamlDto> questions = dto.getQuestions();
         for (int i = 0; i < questions.size(); i++) {
             QuestionYamlDto q = questions.get(i);
-            for (Integer idx : q.getCorrectIndexes()) {
-                if (idx == null || idx < 0 || idx >= q.getOptions().size()) {
-                    throw new IllegalArgumentException(
-                        "Otázka " +
-                        (i + 1) +
-                        ": correctIndexes obsahuje neplatný index " +
-                        idx
-                    );
+            if (q.getImageRef() != null) safeFilename(q.getImageRef());
+            if (q.getType() == QuestionType.MULTIPLE_CHOICE) {
+                for (Integer idx : q.getCorrectIndexes()) {
+                    if (
+                        idx == null ||
+                        idx < 0 ||
+                        idx >= q.getOptions().size()
+                    ) {
+                        throw new IllegalArgumentException(
+                            "Otázka " +
+                            (i + 1) +
+                            ": correctIndexes obsahuje neplatný index " +
+                            idx
+                        );
+                    }
                 }
             }
         }
+    }
+
+    private String safeFilename(String filename) {
+        if (
+            filename == null ||
+            filename.isBlank() ||
+            filename.equals(".") ||
+            filename.equals("..") ||
+            filename.contains("/") ||
+            filename.contains("\\") ||
+            Paths.get(filename).getFileName() == null ||
+            !filename.equals(Paths.get(filename).getFileName().toString())
+        ) {
+            throw new IllegalArgumentException("Název souboru obsahuje cestu");
+        }
+        return filename;
     }
 
     private UUID importQuiz(QuizYamlDto dto) {
@@ -179,17 +244,27 @@ public class QuizYamlImportService {
     private Question toQuestion(QuestionYamlDto dto, Quiz quiz) {
         Question question = new Question();
         question.setQuestion(dto.getQuestion());
+        question.setType(dto.getType());
+        question.setPoints(dto.getPoints());
+        question.setCodeSnippet(dto.getCodeSnippet());
+        question.setImageRef(dto.getImageRef());
         question.setTimeInSeconds(dto.getTimeInSeconds());
         question.setQuiz(quiz);
 
         List<QuestionAnswer> answers = new ArrayList<>();
-        for (int i = 0; i < dto.getOptions().size(); i++) {
-            QuestionAnswer answer = new QuestionAnswer();
-            answer.setAnswer(dto.getOptions().get(i));
-            answer.setIsCorrect(dto.getCorrectIndexes().contains(i));
-            answers.add(answer);
+        if (dto.getType() == QuestionType.MULTIPLE_CHOICE) {
+            for (int i = 0; i < dto.getOptions().size(); i++) {
+                QuestionAnswer answer = new QuestionAnswer();
+                answer.setAnswer(dto.getOptions().get(i));
+                answer.setIsCorrect(dto.getCorrectIndexes().contains(i));
+                answers.add(answer);
+            }
         }
         question.setAnswers(answers);
+        List<MatchingPair> pairs = dto.getPairs();
+        question.setPairs(
+            pairs == null ? new ArrayList<>() : new ArrayList<>(pairs)
+        );
         return question;
     }
 

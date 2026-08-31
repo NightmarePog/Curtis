@@ -26,6 +26,9 @@ public class CustomOAuth2SuccessHandler
         HttpServletResponse response,
         Authentication authentication
     ) throws java.io.IOException {
-        response.sendRedirect(frontendUrl);
+        String dashboardUrl = frontendUrl.endsWith("/")
+            ? frontendUrl + "dashboard"
+            : frontendUrl + "/dashboard";
+        response.sendRedirect(dashboardUrl);
     }
 }

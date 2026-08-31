@@ -5,7 +5,9 @@ import com.sosehl.curtis_backend.common.components.EntraOidcUserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -30,20 +32,17 @@ public class SecurityConfig {
             .cors(cors -> {})
             .authorizeHttpRequests(auth ->
                 auth
-                    .requestMatchers("/error")
+                    .requestMatchers("/error", "/login")
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/v1/quiz")
-                    .hasRole("TEACHER")
-                    .requestMatchers(HttpMethod.GET, "/v1/quiz/*")
-                    .hasRole("TEACHER")
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/v1/quiz/*/questions"
-                    )
-                    .hasRole("TEACHER")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/v1/quiz/*/questions")
+                    .permitAll()
                     .requestMatchers(HttpMethod.POST, "/v1/quiz")
                     .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.PATCH, "/v1/quiz/*")
+                    .hasRole("TEACHER")
+                    .requestMatchers(HttpMethod.DELETE, "/v1/quiz/*")
                     .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.POST, "/v1/quiz/*/questions")
                     .hasRole("TEACHER")
@@ -59,12 +58,24 @@ public class SecurityConfig {
                     .hasRole("TEACHER")
                     .requestMatchers(HttpMethod.POST, "/v1/sessions")
                     .hasRole("TEACHER")
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/v1/sessions/*/results"
-                    )
-                    .hasRole("TEACHER")
-                    .anyRequest()
+                     .requestMatchers(
+                         HttpMethod.GET,
+                         "/v1/sessions/*/results"
+                     )
+                     .hasRole("TEACHER")
+                     .requestMatchers(
+                         HttpMethod.GET,
+                         "/v1/sessions/*/pending-text-answers"
+                     )
+                     .hasRole("TEACHER")
+                     .requestMatchers(
+                         HttpMethod.POST,
+                         "/v1/sessions/*/text-answers/*/grade"
+                     )
+                     .hasRole("TEACHER")
+                     .requestMatchers(HttpMethod.POST, "/v1/quiz/import")
+                     .hasRole("TEACHER")
+                     .anyRequest()
                     .authenticated()
             )
             .oauth2Login(oauth2 ->
@@ -79,7 +90,14 @@ public class SecurityConfig {
                     .logoutUrl("/logout")
                     .logoutSuccessUrl(frontendUrl)
             )
-            .csrf(csrf -> csrf.disable());
+            .csrf(csrf -> csrf.disable())
+            .exceptionHandling(ex ->
+                ex.authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.getWriter().write("{\"message\":\"Unauthorized\"}");
+                })
+            );
 
         return http.build();
     }

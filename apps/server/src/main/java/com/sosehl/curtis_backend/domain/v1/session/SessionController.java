@@ -1,24 +1,34 @@
 package com.sosehl.curtis_backend.domain.v1.session;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.quizResult.QuizResult;
 import com.sosehl.curtis_backend.domain.v1.quizResult.ResultsResponse;
+import com.sosehl.curtis_backend.domain.v1.session.dto.AwardPointsRequest;
+import com.sosehl.curtis_backend.domain.v1.session.dto.PendingTextAnswerResponse;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/v1/sessions")
 public class SessionController {
 
     private final SessionService service;
+    private final ObjectMapper objectMapper;
 
-    public SessionController(SessionService service) {
+    public SessionController(SessionService service, ObjectMapper objectMapper) {
         this.service = service;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping
@@ -48,10 +58,31 @@ public class SessionController {
     @PostMapping("/{sessionUuid}/next")
     public ResponseEntity<QuestionResponse> next(
         @PathVariable UUID sessionUuid,
-        @RequestBody List<Integer> answer,
+        @RequestBody JsonNode answer,
         @AuthenticationPrincipal OAuth2User principal
     ) {
-        return ResponseEntity.ok(service.next(sessionUuid, answer, principal));
+        try {
+            QuestionSubmission submission;
+            if (answer.isArray()) {
+                submission = QuestionSubmission.multipleChoice(
+                    objectMapper.convertValue(
+                        answer,
+                        objectMapper
+                            .getTypeFactory()
+                            .constructCollectionType(List.class, Integer.class)
+                    )
+                );
+            } else {
+                submission = objectMapper.treeToValue(answer, QuestionSubmission.class);
+            }
+            return ResponseEntity.ok(service.next(sessionUuid, submission, principal));
+        } catch (JsonProcessingException | IllegalArgumentException e) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Odpověď má neplatný formát",
+                e
+            );
+        }
     }
 
     @GetMapping("/{sessionUuid}/results")
@@ -67,5 +98,31 @@ public class SessionController {
         @AuthenticationPrincipal OAuth2User principal
     ) {
         return ResponseEntity.ok(service.finish(sessionUuid, principal));
+    }
+
+    @GetMapping("/{sessionUuid}/pending-text-answers")
+    public ResponseEntity<List<PendingTextAnswerResponse>> pendingTextAnswers(
+        @PathVariable UUID sessionUuid
+    ) {
+        return ResponseEntity.ok(service.getPendingTextAnswers(sessionUuid));
+    }
+
+    @PostMapping("/{sessionUuid}/text-answers/{resultId}/grade")
+    public ResponseEntity<PendingTextAnswerResponse> gradeTextAnswer(
+        @PathVariable UUID sessionUuid,
+        @PathVariable Long resultId,
+        @RequestBody @Valid AwardPointsRequest request
+    ) {
+        return ResponseEntity.ok(
+            service.awardTextPoints(sessionUuid, resultId, request.getAwardedPoints())
+        );
+    }
+
+    @GetMapping("/my-results")
+    public ResponseEntity<List<QuizResult>> myResults(
+        @AuthenticationPrincipal OAuth2User principal
+    ) {
+        String studentId = principal.getAttribute("sub");
+        return ResponseEntity.ok(service.getStudentResults(studentId));
     }
 }

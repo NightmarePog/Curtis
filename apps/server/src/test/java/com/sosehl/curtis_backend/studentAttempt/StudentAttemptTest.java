@@ -3,9 +3,13 @@ package com.sosehl.curtis_backend.studentAttempt;
 import static org.assertj.core.api.Assertions.*;
 
 import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
+import com.sosehl.curtis_backend.domain.v1.question.MatchingPair;
+import com.sosehl.curtis_backend.domain.v1.question.QuestionType;
 import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
 import com.sosehl.curtis_backend.domain.v1.session.SessionStatus;
 import com.sosehl.curtis_backend.domain.v1.session.StudentAttempt;
+import com.sosehl.curtis_backend.domain.v1.session.MatchingSubmissionPair;
+import com.sosehl.curtis_backend.domain.v1.session.QuestionSubmission;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -173,5 +177,89 @@ class StudentAttemptTest {
         timedAttempt.addAnswer(List.of(0));
 
         assertThat(timedAttempt.calculateScore()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldUseConfiguredPointsForCorrectMultipleChoiceAnswers() {
+        QuestionResponse question = timedQuestion(10);
+        question.setPoints(3);
+        StudentAttempt weightedAttempt = new StudentAttempt(
+            "student1",
+            List.of(question)
+        );
+
+        weightedAttempt.nextQuestion();
+        weightedAttempt.addAnswer(List.of(0));
+
+        assertThat(weightedAttempt.calculateScore()).isEqualTo(3);
+    }
+
+    @Test
+    void shouldNotAutoScoreQuestionsRequiringManualGrading() {
+        QuestionResponse question = new QuestionResponse();
+        question.setQuestion("Explain the answer");
+        question.setType(QuestionType.FREE_TEXT);
+        question.setPoints(3);
+        StudentAttempt freeTextAttempt = new StudentAttempt(
+            "student1",
+            List.of(question)
+        );
+
+        freeTextAttempt.nextQuestion();
+        freeTextAttempt.addAnswer(List.of());
+
+        assertThat(freeTextAttempt.calculateScore()).isZero();
+    }
+
+    @Test
+    void shouldScoreMatchingOnlyWhenEveryPairMatches() {
+        QuestionResponse question = new QuestionResponse();
+        question.setType(QuestionType.MATCHING);
+        question.setPoints(4);
+        question.setPairs(
+            List.of(new MatchingPair("one", "1"), new MatchingPair("two", "2"))
+        );
+        StudentAttempt matchingAttempt = new StudentAttempt(
+            "student1",
+            List.of(question)
+        );
+
+        matchingAttempt.nextQuestion();
+        QuestionSubmission submission = new QuestionSubmission();
+        submission.setType(QuestionType.MATCHING);
+        submission.setPairs(
+            List.of(
+                new MatchingSubmissionPair(0, 0),
+                new MatchingSubmissionPair(1, 1)
+            )
+        );
+        matchingAttempt.addSubmission(submission);
+
+        assertThat(matchingAttempt.calculateScore()).isEqualTo(4);
+    }
+
+    @Test
+    void shouldRejectMatchingSubmissionWithDuplicateIndexes() {
+        QuestionResponse question = new QuestionResponse();
+        question.setType(QuestionType.MATCHING);
+        question.setPairs(
+            List.of(new MatchingPair("one", "1"), new MatchingPair("two", "2"))
+        );
+        StudentAttempt matchingAttempt = new StudentAttempt(
+            "student1",
+            List.of(question)
+        );
+        matchingAttempt.nextQuestion();
+        QuestionSubmission submission = new QuestionSubmission();
+        submission.setType(QuestionType.MATCHING);
+        submission.setPairs(
+            List.of(
+                new MatchingSubmissionPair(0, 0),
+                new MatchingSubmissionPair(0, 1)
+            )
+        );
+
+        assertThatThrownBy(() -> matchingAttempt.addSubmission(submission))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 }

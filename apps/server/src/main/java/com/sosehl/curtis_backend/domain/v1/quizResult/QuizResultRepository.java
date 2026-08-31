@@ -8,4 +8,8 @@ public interface QuizResultRepository
     extends JpaRepository<QuizResult, Long> {
 
     List<QuizResult> findBySessionUuid(UUID sessionUuid);
+
+    List<QuizResult> findByStudentIdOrderByPlayedAtDesc(String studentId);
+
+    List<QuizResult> findByQuizUuid(UUID quizUuid);
 }

@@ -74,7 +74,7 @@ class MeControllerTest {
     }
 
     @Test
-    void shouldRedirectWhenNotAuthenticated() throws Exception {
-        mockMvc.perform(get("/v1/me")).andExpect(status().isFound());
+    void shouldReturnUnauthorizedWhenNotAuthenticated() throws Exception {
+        mockMvc.perform(get("/v1/me")).andExpect(status().isUnauthorized());
     }
 }

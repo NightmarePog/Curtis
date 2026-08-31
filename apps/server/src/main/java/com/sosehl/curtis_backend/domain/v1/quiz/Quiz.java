@@ -38,4 +38,11 @@ public class Quiz {
     private Integer maxQuestionsPerSession;
 
     private Boolean shuffle;
+
+    @Enumerated(EnumType.STRING)
+    private QuizStatus status;
+
+    private LocalDateTime validFrom;
+
+    private LocalDateTime validTo;
 }

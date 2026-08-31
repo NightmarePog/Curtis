@@ -2,16 +2,20 @@ package com.sosehl.curtis_backend.domain.v1.snapshot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sosehl.curtis_backend.domain.v1.quiz.Quiz;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 public class SnapshotUtil {
 
-    private static final ObjectMapper mapper = new ObjectMapper().configure(
-        SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS,
-        true
-    );
+    private static final ObjectMapper mapper = new ObjectMapper()
+        .registerModule(new JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .configure(
+            SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS,
+            true
+        );
 
     public static String toJson(Quiz quiz) {
         try {

@@ -49,6 +49,10 @@ public class Session {
         return adminId;
     }
 
+    public QuizGetResponse getQuiz() {
+        return quiz;
+    }
+
     public void join(String studentId) {
         if (isExpired()) throw new SessionExpiredException("Session vypršela");
         if (attempts.containsKey(studentId)) {
@@ -73,8 +77,8 @@ public class Session {
         return getAttempt(studentId).nextQuestion();
     }
 
-    public void submitAnswer(String studentId, List<Integer> answer) {
-        getAttempt(studentId).addAnswer(answer);
+    public void submitAnswer(String studentId, QuestionSubmission submission) {
+        getAttempt(studentId).addSubmission(submission);
     }
 
     public StudentAttempt finishAttempt(String studentId) {

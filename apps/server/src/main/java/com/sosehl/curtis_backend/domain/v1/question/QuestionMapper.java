@@ -17,6 +17,11 @@ public interface QuestionMapper {
     @Mapping(target = "question", source = "dto.question")
     @Mapping(target = "timeInSeconds", source = "dto.timeInSeconds")
     @Mapping(target = "answers", source = "dto.answers")
+    @Mapping(target = "type", source = "dto.type")
+    @Mapping(target = "points", source = "dto.points")
+    @Mapping(target = "codeSnippet", source = "dto.codeSnippet")
+    @Mapping(target = "imageRef", source = "dto.imageRef")
+    @Mapping(target = "pairs", source = "dto.pairs")
     Question toEntity(QuestionCreateDto dto, Quiz quiz);
 
     @Mapping(target = "quizUuid", source = "quiz.uuid")
@@ -27,6 +32,11 @@ public interface QuestionMapper {
     )
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "quiz", ignore = true)
+    @Mapping(target = "type", source = "type")
+    @Mapping(target = "points", source = "points")
+    @Mapping(target = "codeSnippet", source = "codeSnippet")
+    @Mapping(target = "imageRef", source = "imageRef")
+    @Mapping(target = "pairs", source = "pairs")
     void updateFromPatch(
         QuestionPatchDto dto,
         @MappingTarget Question question

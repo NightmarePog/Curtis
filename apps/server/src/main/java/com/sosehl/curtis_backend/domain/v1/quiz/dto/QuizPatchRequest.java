@@ -1,8 +1,8 @@
 package com.sosehl.curtis_backend.domain.v1.quiz.dto;
 
-import jakarta.validation.constraints.NotNull;
+import com.sosehl.curtis_backend.domain.v1.quiz.QuizStatus;
 import jakarta.validation.constraints.Size;
-import java.util.UUID;
+import java.time.LocalDateTime;
 import lombok.Data;
 
 @Data
@@ -16,4 +16,10 @@ public class QuizPatchRequest {
     private Integer maxQuestionsPerSession;
 
     private Boolean shuffle;
+
+    private QuizStatus status;
+
+    private LocalDateTime validFrom;
+
+    private LocalDateTime validTo;
 }
