@@ -12,6 +12,13 @@ fi
 
 "$ROOT/scripts/env.sh"
 
+# Export local development values for Spring Boot. Production uses real
+# environment variables and never reads this file.
+set -a
+# shellcheck disable=SC1091
+source "$ROOT/apps/server/.env"
+set +a
+
 echo "🚀 Starting backend…"
 (cd "$ROOT/apps/server" && ./gradlew bootRun --console=plain) > "$LOG_DIR/backend.log" 2>&1 &
 write_pid backend "$!"

@@ -12,8 +12,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo
 echo "🎉 Dev stack is up:"
-echo "   Frontend: http://localhost:3000"
-echo "   Backend:  http://localhost:3001   (OpenAPI: /openapi)"
+echo "   App + API: http://localhost:3000   (/api proxies to the backend)"
+echo "   Backend:   http://localhost:3001   (direct diagnostics; OpenAPI: /openapi)"
 echo "   Logs:     $ROOT/.logs/backend.log | $ROOT/.logs/web.log"
 echo
 echo "Press Ctrl+C to stop everything (servers + database)."

@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
-# Ensure apps/server/.env exists (copied from .env.example).
+# Ensure local backend and frontend environment files exist.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EXAMPLE="$ROOT/apps/server/.env.example"
-ENV_FILE="$ROOT/apps/server/.env"
+SERVER_EXAMPLE="$ROOT/apps/server/.env.example"
+SERVER_ENV_FILE="$ROOT/apps/server/.env"
+WEB_EXAMPLE="$ROOT/apps/web/.env.example"
+WEB_ENV_FILE="$ROOT/apps/web/.env.local"
 
-if [ ! -f "$ENV_FILE" ]; then
-  cp "$EXAMPLE" "$ENV_FILE"
-  echo "📝 Created $ENV_FILE from the template."
-  echo "   Fill in CLIENT_SECRET if you have the real Entra ID secret."
+if [ ! -f "$SERVER_ENV_FILE" ]; then
+  cp "$SERVER_EXAMPLE" "$SERVER_ENV_FILE"
+  echo "Created $SERVER_ENV_FILE from the template."
+  echo "Fill in MICROSOFT_CLIENT_SECRET before using real sign-in."
 else
-  echo "✅ $ENV_FILE already exists."
+  echo "$SERVER_ENV_FILE already exists."
+fi
+
+if [ ! -f "$WEB_ENV_FILE" ]; then
+  cp "$WEB_EXAMPLE" "$WEB_ENV_FILE"
+  echo "Created $WEB_ENV_FILE from the template."
+else
+  echo "$WEB_ENV_FILE already exists."
 fi

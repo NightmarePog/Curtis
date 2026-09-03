@@ -1,11 +1,12 @@
 :80 {
-
     handle_path /api/* {
-        reverse_proxy server:3001
+        reverse_proxy server:3001 {
+            # Forward SSE invalidations immediately instead of buffering them.
+            flush_interval -1
+        }
     }
 
     handle {
         reverse_proxy web:3000
     }
-
 }
