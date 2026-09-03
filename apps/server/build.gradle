@@ -1,7 +1,7 @@
 plugins {
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
     id 'java'
-    id 'org.springframework.boot' version '3.4.3'
-    id 'io.spring.dependency-management' version '1.1.7'
     id 'pmd'
 }
 
@@ -14,49 +14,173 @@ java {
     }
 }
 
-repositories {
-    mavenCentral()
+dependencyManagement {
+    imports {
+        mavenBom(libs.spring.modulith.bom.get().toString())
+    }
 }
 
-pmd {
-    ruleSets = ["category/java/bestpractices.xml/UnusedPrivateField",
-                "category/java/bestpractices.xml/UnusedLocalVariable"]
-}
+def featureDependencies = [
+    classrooms: ['users :: core'],
+    media: [],
+    quizzes: ['media :: core', 'subjects :: core', 'users :: core'],
+    sessions: ['classrooms :: core', 'media :: core', 'quizzes :: core', 'users :: core'],
+    subjects: ['users :: core'],
+    users: [],
+    yaml: ['media :: core', 'quizzes :: core', 'users :: core']
+]
+def generatedModulithSources = layout.buildDirectory.dir(
+    'generated/sources/modulith/main/java'
+)
 
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'org.flywaydb:flyway-core'
-    implementation 'org.flywaydb:flyway-database-postgresql'
-    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.8'
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-    runtimeOnly 'org.postgresql:postgresql'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'com.h2database:h2'
-}
+def generateModulithMetadata = tasks.register('generateModulithMetadata') {
+    description = 'Generates Spring Modulith package metadata from the feature dependency map.'
+    group = 'build setup'
+    inputs.property('featureDependencies', featureDependencies)
+    outputs.dir(generatedModulithSources)
 
-sourceSets {
-    main {
-        resources {
-            srcDirs = ['src/main/resources']
+    doLast {
+        File outputRoot = generatedModulithSources.get().asFile
+        outputRoot.deleteDir()
+
+        Set<String> publishedCores = featureDependencies.values()
+            .flatten()
+            .collect { dependency -> dependency.substring(0, dependency.indexOf(' ::')) }
+            .toSet()
+
+        featureDependencies.each { featureName, dependencies ->
+            File featurePackage = new File(
+                outputRoot,
+                "com/sosehl/curtis/feature/${featureName}"
+            )
+            featurePackage.mkdirs()
+            String allowedDependencies = dependencies
+                .collect { dependency -> "\"${dependency}\"" }
+                .join(', ')
+            String allowedDependenciesArray = dependencies.isEmpty()
+                ? '{}'
+                : "{ ${allowedDependencies} }"
+            new File(featurePackage, 'package-info.java').setText(
+                """@org.springframework.modulith.ApplicationModule(
+    displayName = "${featureName.capitalize()}",
+    allowedDependencies = ${allowedDependenciesArray},
+    type = org.springframework.modulith.ApplicationModule.Type.CLOSED
+)
+package com.sosehl.curtis.feature.${featureName};
+""",
+                'UTF-8'
+            )
+
+            if (publishedCores.contains(featureName)) {
+                File corePackage = new File(featurePackage, 'core')
+                corePackage.mkdirs()
+                new File(corePackage, 'package-info.java').setText(
+                    """@org.springframework.modulith.NamedInterface("core")
+package com.sosehl.curtis.feature.${featureName}.core;
+""",
+                    'UTF-8'
+                )
+            }
         }
     }
 }
 
-processResources {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+def generatedModulithSourceFiles = files(generatedModulithSources)
+    .builtBy(generateModulithMetadata)
+
+sourceSets {
+    main {
+        java.srcDir(generatedModulithSourceFiles)
+    }
+    schemaGenerator {
+        java.srcDir('src/schemaGenerator/java')
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
 }
 
-test {
+pmd {
+    ruleSets = [
+        'category/java/bestpractices.xml/UnusedPrivateField',
+        'category/java/bestpractices.xml/UnusedLocalVariable',
+        'category/java/bestpractices.xml/UnusedPrivateMethod'
+    ]
+}
+
+dependencies {
+    annotationProcessor(libs.spring.boot.configuration.processor)
+
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.oauth2.client)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.micrometer.tracing.otel)
+    implementation(libs.spring.modulith.api)
+    implementation(libs.spring.session.jdbc)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.postgresql)
+    implementation(libs.springdoc.openapi)
+    implementation(libs.jackson.yaml)
+    implementation(libs.snakeyaml)
+    implementation(libs.commons.io)
+
+    runtimeOnly(libs.twelvemonkeys.webp)
+    runtimeOnly(libs.postgresql)
+
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.modulith.docs)
+    testImplementation(libs.spring.security.test)
+    testImplementation(libs.bundles.testcontainers)
+    testRuntimeOnly(libs.junit.platform.launcher)
+
+    schemaGeneratorImplementation(libs.bundles.victools)
+}
+
+def apiVersion = providers.systemProperty('api.version').orElse('1.40')
+
+tasks.withType(Test).configureEach {
     useJUnitPlatform()
-    failOnNoDiscoveredTests = false
+    systemProperty('api.version', apiVersion.get())
+}
+
+tasks.register('generateOpenApiDocs', Test) {
+    description = 'Exports the Spring REST contract to build/openapi/openapi.json.'
+    group = 'documentation'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/OpenApiExportTest.class'
+    outputs.file(layout.buildDirectory.file('openapi/openapi.json'))
+}
+
+def generatedQuizSchema = layout.buildDirectory.file('schema/quiz.schema.json')
+
+def generateQuizSchema = tasks.register('generateQuizSchema', JavaExec) {
+    description = 'Generates the JSON Schema used by the quiz YAML editor and documentation.'
+    group = 'documentation'
+    dependsOn(tasks.named('classes'), tasks.named('schemaGeneratorClasses'))
+    classpath = sourceSets.schemaGenerator.runtimeClasspath + sourceSets.main.runtimeClasspath
+    mainClass.set('com.sosehl.curtis.documentation.QuizSchemaGenerator')
+    args(
+        'com.sosehl.curtis.feature.yaml.dto.YamlQuizDocument',
+        generatedQuizSchema.get().asFile.absolutePath
+    )
+    inputs.files(sourceSets.main.output)
+    inputs.property('schemaDocumentType', 'com.sosehl.curtis.feature.yaml.dto.YamlQuizDocument')
+    outputs.file(generatedQuizSchema)
+}
+
+tasks.named('test', Test) {
+    exclude '**/OpenApiExportTest.class'
+    dependsOn(generateQuizSchema)
+    systemProperty('quiz.schema.path', generatedQuizSchema.get().asFile.absolutePath)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
 }

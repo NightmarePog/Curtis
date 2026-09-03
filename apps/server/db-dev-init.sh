@@ -1,57 +1,39 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-CONTAINER_NAME="curtis-postgres"
-PORT=5432
+CONTAINER_NAME="curtis-postgres-v2"
+DATABASE_PORT=5432
+DATABASE_VOLUME="curtis_pgdata_v2"
 
-echo "🔍 Checking existing container..."
-
-# Stop + remove container if exists
-if docker ps -aq -f name="^/${CONTAINER_NAME}$" | grep -q .; then
-  echo "🗑 Removing existing container..."
-  docker rm -f $CONTAINER_NAME
+if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
+  echo "PostgreSQL is already running in $CONTAINER_NAME."
+  exit 0
 fi
 
-echo "🔍 Checking processes on port $PORT..."
+if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
+  echo "Starting the existing PostgreSQL container…"
+  docker start "$CONTAINER_NAME" >/dev/null
+else
+  if ss -ltn 2>/dev/null | grep -qE ":${DATABASE_PORT} "; then
+    echo "Port ${DATABASE_PORT} is already in use; PostgreSQL was not started." >&2
+    exit 1
+  fi
 
-# Kill anything using the port
-PIDS=$(lsof -ti :$PORT || true)
-
-if [ -n "$PIDS" ]; then
-  echo "⚠️ Port $PORT is in use. Killing processes: $PIDS"
-  kill -9 $PIDS || true
+  echo "Creating the PostgreSQL development container…"
+  docker run -d \
+    --name "$CONTAINER_NAME" \
+    -e POSTGRES_DB=curtisdb \
+    -e POSTGRES_USER=curtisuser \
+    -e POSTGRES_PASSWORD=curtispass \
+    -p "${DATABASE_PORT}:5432" \
+    -v "${DATABASE_VOLUME}:/var/lib/postgresql/data" \
+    postgres:16-alpine >/dev/null
 fi
 
-# Try to stop system postgres (very common culprit)
-if systemctl is-active --quiet postgresql 2>/dev/null; then
-  echo "⚠️ Stopping system PostgreSQL..."
-  sudo systemctl stop postgresql
-fi
-
-# Final check
-if lsof -i :$PORT >/dev/null 2>&1; then
-  echo "❌ Port $PORT is STILL in use. Aborting."
-  lsof -i :$PORT
-  exit 1
-fi
-
-echo "🚀 Starting PostgreSQL container..."
-
-docker run -d \
-  --name $CONTAINER_NAME \
-  -e POSTGRES_DB=curtisdb \
-  -e POSTGRES_USER=curtisuser \
-  -e POSTGRES_PASSWORD=curtispass \
-  -p $PORT:5432 \
-  -v pgdata:/var/lib/postgresql/data \
-  postgres:16-alpine
-
-echo "⏳ Waiting for database to be ready..."
-
-until docker exec $CONTAINER_NAME pg_isready -U curtisuser >/dev/null 2>&1; do
-  echo "💤 sleeping..."
+echo "Waiting for PostgreSQL…"
+until docker exec "$CONTAINER_NAME" pg_isready -U curtisuser -d curtisdb >/dev/null 2>&1; do
   sleep 1
 done
 
-echo "✅ Database is ready!"
+echo "PostgreSQL is ready."
