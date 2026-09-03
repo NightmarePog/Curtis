@@ -1,30 +1,21 @@
+import { ArrowLeft, Map } from "lucide-react";
 import Link from "next/link";
-import { Compass } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
+import { buttonStyles } from "@/components/ui";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto flex min-h-[55vh] max-w-md flex-col items-center justify-center gap-5 text-center">
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
-        <Compass aria-hidden="true" className="size-6" />
+    <section className="mx-auto flex min-h-[65vh] max-w-lg flex-col items-center justify-center text-center">
+      <span className="grid size-14 place-items-center rounded-lg border border-border bg-card text-primary-strong">
+        <Map aria-hidden="true" className="size-6" />
       </span>
-      <div className="space-y-2">
-        <p
-          data-numeric
-          className="text-sm font-medium tracking-wide text-muted-foreground"
-        >
-          404
-        </p>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Tady nic není
-        </h1>
-        <p className="text-pretty text-sm text-muted-foreground">
-          Stránka neexistuje nebo byla přesunuta.
-        </p>
-      </div>
-      <Button asChild>
-        <Link href="/dashboard">Zpět na přehled</Link>
-      </Button>
-    </div>
+      <p className="mt-6 font-mono text-xs font-semibold text-primary-strong">404</p>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Tudy cesta nevede</h1>
+      <p className="mt-3 text-pretty text-muted-foreground">Stránka neexistuje nebo byla přesunuta. Vraťte se do hlavního přehledu.</p>
+      <Link href="/dashboard" className={buttonStyles({ className: "mt-7" })}>
+        <ArrowLeft aria-hidden="true" className="size-4" />
+        Zpět na přehled
+      </Link>
+    </section>
   );
 }

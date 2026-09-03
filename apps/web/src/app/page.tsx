@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { LOGIN_URL } from "@/lib/api";
+import { DEMO_MODE, LOGIN_URL } from "@/lib/constants";
 
 export default function HomePage() {
-  redirect(LOGIN_URL);
+  redirect(DEMO_MODE ? "/login" : LOGIN_URL);
 }

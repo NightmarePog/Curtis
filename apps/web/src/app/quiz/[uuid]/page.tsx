@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
-import { TeacherOnly } from "@/components/common/guards";
-import { QuizDetail } from "@/components/quiz/quiz-detail";
+"use client";
 
-export const metadata: Metadata = { title: "Úprava kvízu" };
+import { use } from "react";
 
-export default function QuizDetailPage() {
+import { RequireAuth } from "@/features/auth/auth-provider";
+import { QuizWorkspace } from "@/features/teacher";
+
+export default function QuizPage({ params }: { params: Promise<{ uuid: string }> }) {
+  const { uuid } = use(params);
   return (
-    <TeacherOnly>
-      <QuizDetail />
-    </TeacherOnly>
+    <RequireAuth teacher>
+      <QuizWorkspace uuid={uuid} />
+    </RequireAuth>
   );
 }

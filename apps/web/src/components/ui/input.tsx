@@ -1,20 +1,28 @@
-import * as React from "react"
+import { forwardRef, type InputHTMLAttributes } from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
-  return (
-    <input
-      type={type}
-      data-slot="input"
-      className={cn(
-        // 44px tall on touch viewports, 40px from md up.
-        "h-11 w-full min-w-0 rounded-lg border border-input bg-muted/40 px-3 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground hover:border-ring/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:h-10 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
-        className
-      )}
-      {...props}
-    />
-  )
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  invalid?: boolean;
 }
 
-export { Input }
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, invalid = false, ...props }, ref) => (
+    <input
+      ref={ref}
+      data-slot="input"
+      {...props}
+      aria-invalid={invalid || props["aria-invalid"] || undefined}
+      className={cn(
+        "min-h-11 w-full rounded-md border border-border-strong bg-field px-3.5 py-2 text-base text-foreground",
+        "transition-[border-color,box-shadow,background-color] duration-150 motion-reduce:transition-none",
+        "focus-visible:border-brand focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/35",
+        "disabled:bg-surface-subtle disabled:text-muted-foreground disabled:opacity-70",
+        invalid && "border-danger focus-visible:border-danger focus-visible:ring-danger/30",
+        className,
+      )}
+    />
+  ),
+);
+
+Input.displayName = "Input";
