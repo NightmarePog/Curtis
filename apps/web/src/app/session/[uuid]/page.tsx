@@ -1,26 +1,38 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { isTeacher, useMe } from "@/components/providers/auth-provider";
-import { RequireAuth } from "@/components/common/guards";
-import { LiveSessionPanel } from "@/components/session/live-session-panel";
-import { PlaySession } from "@/components/session/play-session";
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-function SessionRouter() {
-  const { uuid } = useParams<{ uuid: string }>();
-  const me = useMe();
+import {
+  RequireAuth,
+  isAdministrator,
+  isStudent,
+  isTeacher,
+  useAuth,
+} from "@/features/auth/auth-provider";
+import { StudentSession } from "@/features/student";
+import { TeacherSessionMonitor } from "@/features/teacher";
 
-  return isTeacher(me) ? (
-    <LiveSessionPanel sessionUuid={uuid} />
-  ) : (
-    <PlaySession sessionUuid={uuid} />
-  );
-}
+export default function SessionPage({ params }: { params: Promise<{ uuid: string }> }) {
+  const { uuid } = use(params);
+  const { state } = useAuth();
+  const router = useRouter();
 
-export default function SessionPage() {
+  useEffect(() => {
+    if (state.status === "user" && isAdministrator(state.user)) {
+      router.replace("/admin");
+    }
+  }, [router, state]);
+
   return (
     <RequireAuth>
-      <SessionRouter />
+      {state.status === "user" &&
+        (isTeacher(state.user) ? (
+          <TeacherSessionMonitor sessionUuid={uuid} />
+        ) : isStudent(state.user) ? (
+          <StudentSession sessionUuid={uuid} />
+        ) : null)}
     </RequireAuth>
   );
 }

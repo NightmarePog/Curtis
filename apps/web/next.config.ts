@@ -1,19 +1,25 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
-const nextConfig: NextConfig = {
-  reactCompiler: true,
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/:path*`,
-      },
-      {
-        source: "/media/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/media/:path*`,
-      },
-    ];
-  },
+const nextConfig = (phase: string): NextConfig => {
+  const backendUrl = (
+    process.env.CURTIS_BACKEND_URL || "http://localhost:3001"
+  ).replace(/\/+$/, "");
+
+  return {
+    output: "standalone",
+    poweredByHeader: false,
+    async rewrites() {
+      if (phase !== PHASE_DEVELOPMENT_SERVER) return [];
+
+      return [
+        {
+          source: "/api/:path*",
+          destination: `${backendUrl}/:path*`,
+        },
+      ];
+    },
+  };
 };
 
 export default nextConfig;

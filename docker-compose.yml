@@ -1,56 +1,68 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: curtisdb
-      POSTGRES_USER: curtisuser
-      POSTGRES_PASSWORD: curtispass
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB:-curtisdb}
+      POSTGRES_USER: ${POSTGRES_USER:-curtisuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-curtispass}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # V2 intentionally uses a new volume because the rebuilt schema is a new
+      # Flyway baseline and cannot reuse prototype data safely.
+      - postgres_v2_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U curtisuser -d curtisdb"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 10
 
   server:
+    restart: unless-stopped
     build:
-      context: ./server
+      context: ./apps/server
       dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/curtisdb
-      SPRING_DATASOURCE_USERNAME: curtisuser
-      SPRING_DATASOURCE_PASSWORD: curtispass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-curtisdb}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-curtisuser}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-curtispass}
       MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID}
       MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET}
-      MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT_ID}
-      MICROSOFT_REDIRECT_URI: ${MICROSOFT_REDIRECT_URI:-http://localhost:3001/login/oauth2/code/microsoft}
+      MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT_ID:-common}
+      MICROSOFT_REDIRECT_URI: ${MICROSOFT_REDIRECT_URI:-http://localhost/api/login/oauth2/code/microsoft}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      QUIZ_IMPORT_ROOT: /data/import
+      MEDIA_ROOT: /data/media
+    volumes:
+      - quiz_import:/data/import
+      - media_data:/data/media
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/actuator/health/readiness >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
 
   web:
+    restart: unless-stopped
     build:
-      context: ./web
+      context: ./apps/web
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: /api
+      args:
+        NEXT_PUBLIC_DEMO_MODE: "false"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
 
   caddy:
     image: caddy:2-alpine
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./caddy/caddyfile:/etc/caddy/Caddyfile
+      - ./apps/caddy/caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
@@ -58,6 +70,8 @@ services:
       - web
 
 volumes:
-  postgres_data:
+  postgres_v2_data:
+  quiz_import:
+  media_data:
   caddy_data:
   caddy_config:

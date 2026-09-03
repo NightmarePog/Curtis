@@ -17,17 +17,17 @@ All paths below are relative to `apps/server/`.
 ### Task 1: Entra role → Spring Security authority mapping
 
 **Files:**
-- Create: `src/main/java/com/sosehl/curtis_backend/common/components/EntraRoleMapper.java`
-- Test: `src/test/java/com/sosehl/curtis_backend/security/EntraRoleMapperTest.java`
+- Create: `src/main/java/com/sosehl/curtis/common/components/EntraRoleMapper.java`
+- Test: `src/test/java/com/sosehl/curtis/security/EntraRoleMapperTest.java`
 
 - [ ] **Step 1: Write the failing test**
 
 ```java
-package com.sosehl.curtis_backend.security;
+package com.sosehl.curtis.security;
 
 import static org.assertj.core.api.Assertions.*;
 
-import com.sosehl.curtis_backend.common.components.EntraRoleMapper;
+import com.sosehl.curtis.common.components.EntraRoleMapper;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -89,13 +89,13 @@ class EntraRoleMapperTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.security.EntraRoleMapperTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.security.EntraRoleMapperTest"`
 Expected: FAIL — compilation error, `EntraRoleMapper` does not exist.
 
 - [ ] **Step 3: Write the implementation**
 
 ```java
-package com.sosehl.curtis_backend.common.components;
+package com.sosehl.curtis.common.components;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -127,13 +127,13 @@ public final class EntraRoleMapper {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.security.EntraRoleMapperTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.security.EntraRoleMapperTest"`
 Expected: PASS (6 tests)
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/main/java/com/sosehl/curtis_backend/common/components/EntraRoleMapper.java src/test/java/com/sosehl/curtis_backend/security/EntraRoleMapperTest.java
+git add src/main/java/com/sosehl/curtis/common/components/EntraRoleMapper.java src/test/java/com/sosehl/curtis/security/EntraRoleMapperTest.java
 git commit -m "feat(security): map Entra roles claim to Spring Security authorities"
 ```
 
@@ -142,14 +142,14 @@ git commit -m "feat(security): map Entra roles claim to Spring Security authorit
 ### Task 2: Custom OIDC user service that attaches role authorities
 
 **Files:**
-- Create: `src/main/java/com/sosehl/curtis_backend/common/components/EntraOidcUserService.java`
+- Create: `src/main/java/com/sosehl/curtis/common/components/EntraOidcUserService.java`
 
 No dedicated unit test for this class: it is a thin wrapper that delegates to Spring's own `OidcUserService` (which performs real network calls to the userinfo endpoint), and the only real logic it adds — string-to-authority mapping — is already fully covered by `EntraRoleMapperTest`. Its wiring is verified end-to-end by the authorization tests in Task 3.
 
 - [ ] **Step 1: Write the implementation**
 
 ```java
-package com.sosehl.curtis_backend.common.components;
+package com.sosehl.curtis.common.components;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -201,7 +201,7 @@ Expected: BUILD SUCCESSFUL
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/main/java/com/sosehl/curtis_backend/common/components/EntraOidcUserService.java
+git add src/main/java/com/sosehl/curtis/common/components/EntraOidcUserService.java
 git commit -m "feat(security): wrap OidcUserService to attach Entra role authorities"
 ```
 
@@ -210,13 +210,13 @@ git commit -m "feat(security): wrap OidcUserService to attach Entra role authori
 ### Task 3: Gate quiz-mutating endpoints behind ROLE_TEACHER
 
 **Files:**
-- Modify: `src/main/java/com/sosehl/curtis_backend/config/SecurityConfig.java`
-- Modify: `src/test/java/com/sosehl/curtis_backend/quiz/QuizControllerTest.java`
-- Create: `src/test/java/com/sosehl/curtis_backend/security/RoleAuthorizationTest.java`
+- Modify: `src/main/java/com/sosehl/curtis/config/SecurityConfig.java`
+- Modify: `src/test/java/com/sosehl/curtis/quiz/QuizControllerTest.java`
+- Create: `src/test/java/com/sosehl/curtis/security/RoleAuthorizationTest.java`
 
 - [ ] **Step 1: Update `QuizControllerTest` to grant `ROLE_TEACHER` where the endpoint now requires it**
 
-In `src/test/java/com/sosehl/curtis_backend/quiz/QuizControllerTest.java`, change the `setUp()` method's request builder from:
+In `src/test/java/com/sosehl/curtis/quiz/QuizControllerTest.java`, change the `setUp()` method's request builder from:
 
 ```java
                     .with(SecurityMockMvcRequestPostProcessors.user("testuser"))
@@ -244,22 +244,22 @@ Leave `shouldGetQuizByUuid`, `shouldReturnNotFoundForUnknownUuid`, `shouldReturn
 
 - [ ] **Step 2: Run the updated test file as a sanity check**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.quiz.QuizControllerTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.quiz.QuizControllerTest"`
 Expected: PASS. Granting `ROLE_TEACHER` doesn't break anything yet because `SecurityConfig` doesn't require any specific role yet — every request is still just `authenticated()`. This step only confirms the test file itself compiles and the role authority was added correctly. The actual red step comes from the new negative test in Step 3.
 
 - [ ] **Step 3: Write the new `RoleAuthorizationTest` (this is the test that proves the gate doesn't exist yet)**
 
 ```java
-package com.sosehl.curtis_backend.security;
+package com.sosehl.curtis.security;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
-import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionCreateDto;
-import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizCreateRequest;
-import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizPatchRequest;
+import com.sosehl.curtis.domain.v1.question.QuestionAnswer;
+import com.sosehl.curtis.domain.v1.question.dto.QuestionCreateDto;
+import com.sosehl.curtis.domain.v1.quiz.dto.QuizCreateRequest;
+import com.sosehl.curtis.domain.v1.quiz.dto.QuizPatchRequest;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -405,18 +405,18 @@ class RoleAuthorizationTest {
 
 - [ ] **Step 4: Run `RoleAuthorizationTest` to verify the forbid-tests fail**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.security.RoleAuthorizationTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.security.RoleAuthorizationTest"`
 Expected: FAIL — `shouldForbidQuizCreateWithoutTeacherRole`, `shouldForbidQuizPatchWithoutTeacherRole`, `shouldForbidQuestionCreateWithoutTeacherRole`, `shouldForbidSessionCreateWithoutTeacherRole` all get `201`/`200` instead of `403` because no role gate exists yet.
 
 - [ ] **Step 5: Update `SecurityConfig` to require `ROLE_TEACHER` and wire in `EntraOidcUserService`**
 
-Replace the full contents of `src/main/java/com/sosehl/curtis_backend/config/SecurityConfig.java` with:
+Replace the full contents of `src/main/java/com/sosehl/curtis/config/SecurityConfig.java` with:
 
 ```java
-package com.sosehl.curtis_backend.config;
+package com.sosehl.curtis.config;
 
-import com.sosehl.curtis_backend.common.components.CustomOAuth2SuccessHandler;
-import com.sosehl.curtis_backend.common.components.EntraOidcUserService;
+import com.sosehl.curtis.common.components.CustomOAuth2SuccessHandler;
+import com.sosehl.curtis.common.components.EntraOidcUserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -475,7 +475,7 @@ public class SecurityConfig {
 
 - [ ] **Step 6: Run both test files to verify everything passes**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.quiz.QuizControllerTest" --tests "com.sosehl.curtis_backend.security.RoleAuthorizationTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.quiz.QuizControllerTest" --tests "com.sosehl.curtis.security.RoleAuthorizationTest"`
 Expected: PASS (all tests in both files)
 
 - [ ] **Step 7: Run the full test suite to check for unrelated regressions**
@@ -486,7 +486,7 @@ Expected: PASS. If `SessionTest` or `StudentAttemptTest` fail, they don't touch 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/main/java/com/sosehl/curtis_backend/config/SecurityConfig.java src/test/java/com/sosehl/curtis_backend/quiz/QuizControllerTest.java src/test/java/com/sosehl/curtis_backend/security/RoleAuthorizationTest.java
+git add src/main/java/com/sosehl/curtis/config/SecurityConfig.java src/test/java/com/sosehl/curtis/quiz/QuizControllerTest.java src/test/java/com/sosehl/curtis/security/RoleAuthorizationTest.java
 git commit -m "feat(security): require ROLE_TEACHER for quiz/question/session mutation endpoints"
 ```
 
@@ -495,12 +495,12 @@ git commit -m "feat(security): require ROLE_TEACHER for quiz/question/session mu
 ### Task 4: Server-side per-question time-limit enforcement
 
 **Files:**
-- Modify: `src/main/java/com/sosehl/curtis_backend/domain/v1/session/StudentAttempt.java`
-- Modify: `src/test/java/com/sosehl/curtis_backend/studentAttempt/StudentAttemptTest.java`
+- Modify: `src/main/java/com/sosehl/curtis/domain/v1/session/StudentAttempt.java`
+- Modify: `src/test/java/com/sosehl/curtis/studentAttempt/StudentAttemptTest.java`
 
 - [ ] **Step 1: Add failing tests to `StudentAttemptTest`**
 
-Add these imports to the top of `src/test/java/com/sosehl/curtis_backend/studentAttempt/StudentAttemptTest.java` (alongside the existing ones):
+Add these imports to the top of `src/test/java/com/sosehl/curtis/studentAttempt/StudentAttemptTest.java` (alongside the existing ones):
 
 ```java
 import java.time.Clock;
@@ -611,19 +611,19 @@ Add these three test methods to the class:
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.studentAttempt.StudentAttemptTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.studentAttempt.StudentAttemptTest"`
 Expected: FAIL — compilation error, no `StudentAttempt(String, List, Clock)` constructor exists yet.
 
 - [ ] **Step 3: Implement time-limit enforcement in `StudentAttempt`**
 
-Replace the full contents of `src/main/java/com/sosehl/curtis_backend/domain/v1/session/StudentAttempt.java` with:
+Replace the full contents of `src/main/java/com/sosehl/curtis/domain/v1/session/StudentAttempt.java` with:
 
 ```java
-package com.sosehl.curtis_backend.domain.v1.session;
+package com.sosehl.curtis.domain.v1.session;
 
-import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
-import com.sosehl.curtis_backend.domain.v1.question.dto.QuestionResponse;
-import com.sosehl.curtis_backend.domain.v1.session.exceptions.NoMoreQuestionsException;
+import com.sosehl.curtis.domain.v1.question.QuestionAnswer;
+import com.sosehl.curtis.domain.v1.question.dto.QuestionResponse;
+import com.sosehl.curtis.domain.v1.session.exceptions.NoMoreQuestionsException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -750,7 +750,7 @@ public class StudentAttempt {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.studentAttempt.StudentAttemptTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.studentAttempt.StudentAttemptTest"`
 Expected: PASS (8 tests: 5 existing + 3 new)
 
 - [ ] **Step 5: Run the full test suite to check for regressions**
@@ -761,7 +761,7 @@ Expected: PASS
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/main/java/com/sosehl/curtis_backend/domain/v1/session/StudentAttempt.java src/test/java/com/sosehl/curtis_backend/studentAttempt/StudentAttemptTest.java
+git add src/main/java/com/sosehl/curtis/domain/v1/session/StudentAttempt.java src/test/java/com/sosehl/curtis/studentAttempt/StudentAttemptTest.java
 git commit -m "feat(session): enforce per-question time limit server-side"
 ```
 
@@ -770,15 +770,15 @@ git commit -m "feat(session): enforce per-question time limit server-side"
 ### Task 5: YAML import DTOs
 
 **Files:**
-- Create: `src/main/java/com/sosehl/curtis_backend/domain/v1/quiz/dto/QuizYamlDto.java`
-- Create: `src/main/java/com/sosehl/curtis_backend/domain/v1/quiz/dto/QuestionYamlDto.java`
+- Create: `src/main/java/com/sosehl/curtis/domain/v1/quiz/dto/QuizYamlDto.java`
+- Create: `src/main/java/com/sosehl/curtis/domain/v1/quiz/dto/QuestionYamlDto.java`
 
 These are structural data classes (validation annotations, no independent behavior); they're exercised by `QuizYamlImportServiceTest` in Task 7. No dedicated test file.
 
 - [ ] **Step 1: Create `QuestionYamlDto`**
 
 ```java
-package com.sosehl.curtis_backend.domain.v1.quiz.dto;
+package com.sosehl.curtis.domain.v1.quiz.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -810,7 +810,7 @@ public class QuestionYamlDto {
 - [ ] **Step 2: Create `QuizYamlDto`**
 
 ```java
-package com.sosehl.curtis_backend.domain.v1.quiz.dto;
+package com.sosehl.curtis.domain.v1.quiz.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -851,7 +851,7 @@ Expected: BUILD SUCCESSFUL
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/main/java/com/sosehl/curtis_backend/domain/v1/quiz/dto/QuizYamlDto.java src/main/java/com/sosehl/curtis_backend/domain/v1/quiz/dto/QuestionYamlDto.java
+git add src/main/java/com/sosehl/curtis/domain/v1/quiz/dto/QuizYamlDto.java src/main/java/com/sosehl/curtis/domain/v1/quiz/dto/QuestionYamlDto.java
 git commit -m "feat(quiz): add YAML import DTOs"
 ```
 
@@ -861,7 +861,7 @@ git commit -m "feat(quiz): add YAML import DTOs"
 
 **Files:**
 - Modify: `build.gradle`
-- Modify: `src/main/java/com/sosehl/curtis_backend/CurtisBackendApplication.java`
+- Modify: `src/main/java/com/sosehl/curtis/CurtisBackendApplication.java`
 - Modify: `src/main/resources/application.properties`
 - Modify: `src/test/resources/application-test.properties`
 
@@ -877,10 +877,10 @@ In `build.gradle`, in the `dependencies { ... }` block, add this line directly u
 
 - [ ] **Step 2: Enable scheduling in `CurtisBackendApplication`**
 
-Replace the full contents of `src/main/java/com/sosehl/curtis_backend/CurtisBackendApplication.java` with:
+Replace the full contents of `src/main/java/com/sosehl/curtis/CurtisBackendApplication.java` with:
 
 ```java
-package com.sosehl.curtis_backend;
+package com.sosehl.curtis;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
@@ -953,7 +953,7 @@ Expected: BUILD SUCCESSFUL
 - [ ] **Step 6: Commit**
 
 ```bash
-git add build.gradle src/main/java/com/sosehl/curtis_backend/CurtisBackendApplication.java src/main/resources/application.properties src/test/resources/application-test.properties
+git add build.gradle src/main/java/com/sosehl/curtis/CurtisBackendApplication.java src/main/resources/application.properties src/test/resources/application-test.properties
 git commit -m "chore(quiz): add yaml dependency, scheduling, and import config"
 ```
 
@@ -962,19 +962,19 @@ git commit -m "chore(quiz): add yaml dependency, scheduling, and import config"
 ### Task 7: YAML drop-folder import service
 
 **Files:**
-- Create: `src/main/java/com/sosehl/curtis_backend/domain/v1/quiz/QuizYamlImportService.java`
-- Test: `src/test/java/com/sosehl/curtis_backend/quiz/QuizYamlImportServiceTest.java`
+- Create: `src/main/java/com/sosehl/curtis/domain/v1/quiz/QuizYamlImportService.java`
+- Test: `src/test/java/com/sosehl/curtis/quiz/QuizYamlImportServiceTest.java`
 
 - [ ] **Step 1: Write the failing test**
 
 ```java
-package com.sosehl.curtis_backend.quiz;
+package com.sosehl.curtis.quiz;
 
 import static org.assertj.core.api.Assertions.*;
 
-import com.sosehl.curtis_backend.domain.v1.quiz.Quiz;
-import com.sosehl.curtis_backend.domain.v1.quiz.QuizRepository;
-import com.sosehl.curtis_backend.domain.v1.quiz.QuizYamlImportService;
+import com.sosehl.curtis.domain.v1.quiz.Quiz;
+import com.sosehl.curtis.domain.v1.quiz.QuizRepository;
+import com.sosehl.curtis.domain.v1.quiz.QuizYamlImportService;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1166,19 +1166,19 @@ class QuizYamlImportServiceTest {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.quiz.QuizYamlImportServiceTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.quiz.QuizYamlImportServiceTest"`
 Expected: FAIL — compilation error, `QuizYamlImportService` does not exist.
 
 - [ ] **Step 3: Implement `QuizYamlImportService`**
 
 ```java
-package com.sosehl.curtis_backend.domain.v1.quiz;
+package com.sosehl.curtis.domain.v1.quiz;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.sosehl.curtis_backend.domain.v1.question.Question;
-import com.sosehl.curtis_backend.domain.v1.question.QuestionAnswer;
-import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuestionYamlDto;
-import com.sosehl.curtis_backend.domain.v1.quiz.dto.QuizYamlDto;
+import com.sosehl.curtis.domain.v1.question.Question;
+import com.sosehl.curtis.domain.v1.question.QuestionAnswer;
+import com.sosehl.curtis.domain.v1.quiz.dto.QuestionYamlDto;
+import com.sosehl.curtis.domain.v1.quiz.dto.QuizYamlDto;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -1418,7 +1418,7 @@ public class QuizYamlImportService {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `./gradlew test --tests "com.sosehl.curtis_backend.quiz.QuizYamlImportServiceTest"`
+Run: `./gradlew test --tests "com.sosehl.curtis.quiz.QuizYamlImportServiceTest"`
 Expected: PASS (6 tests)
 
 - [ ] **Step 5: Run the full test suite**
@@ -1429,7 +1429,7 @@ Expected: PASS — all test classes across the project succeed.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/main/java/com/sosehl/curtis_backend/domain/v1/quiz/QuizYamlImportService.java src/test/java/com/sosehl/curtis_backend/quiz/QuizYamlImportServiceTest.java
+git add src/main/java/com/sosehl/curtis/domain/v1/quiz/QuizYamlImportService.java src/test/java/com/sosehl/curtis/quiz/QuizYamlImportServiceTest.java
 git commit -m "feat(quiz): add scheduled drop-folder YAML quiz importer"
 ```
 

@@ -5,7 +5,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INIT_SCRIPT="$ROOT/apps/server/db-dev-init.sh"
-CONTAINER="curtis-postgres"
+CONTAINER="curtis-postgres-v2"
 
 [ $# -eq 1 ] || { echo "Usage: $0 {up|down|status|logs}"; exit 1; }
 
@@ -18,11 +18,13 @@ case "$1" in
     fi
     ;;
   down)
-    if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-      docker rm -f "$CONTAINER"
-      echo "🗑  Container $CONTAINER removed."
+    if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+      docker stop "$CONTAINER" >/dev/null
+      echo "PostgreSQL stopped; its named volume was preserved."
+    elif docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+      echo "PostgreSQL is already stopped."
     else
-      echo "ℹ️  Container $CONTAINER does not exist."
+      echo "PostgreSQL container does not exist."
     fi
     ;;
   status)

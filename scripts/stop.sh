@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop the dev servers (backend + frontend). Use --all to also drop PostgreSQL.
+# Stop the dev servers (backend + frontend). Use --all to also stop PostgreSQL.
 set -u
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"

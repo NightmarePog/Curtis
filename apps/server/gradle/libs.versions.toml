@@ -1,0 +1,51 @@
+[versions]
+spring-boot = "3.4.3"
+spring-dependency-management = "1.1.7"
+spring-modulith = "1.3.12"
+springdoc = "2.8.8"
+commons-io = "2.22.0"
+twelvemonkeys = "3.14.0"
+victools = "4.38.0"
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+
+[libraries]
+# Spring Boot's dependency management supplies versions for versionless entries.
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-oauth2-client = { module = "org.springframework.boot:spring-boot-starter-oauth2-client" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+
+micrometer-tracing-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel" }
+spring-modulith-api = { module = "org.springframework.modulith:spring-modulith-api" }
+spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
+spring-modulith-docs = { module = "org.springframework.modulith:spring-modulith-docs" }
+spring-session-jdbc = { module = "org.springframework.session:spring-session-jdbc" }
+
+flyway-core = { module = "org.flywaydb:flyway-core" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
+postgresql = { module = "org.postgresql:postgresql" }
+
+springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-api", version.ref = "springdoc" }
+jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml" }
+snakeyaml = { module = "org.yaml:snakeyaml" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+twelvemonkeys-webp = { module = "com.twelvemonkeys.imageio:imageio-webp", version.ref = "twelvemonkeys" }
+
+spring-security-test = { module = "org.springframework.security:spring-security-test" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql" }
+
+victools-generator = { module = "com.github.victools:jsonschema-generator", version.ref = "victools" }
+victools-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref = "victools" }
+victools-jakarta-validation = { module = "com.github.victools:jsonschema-module-jakarta-validation", version.ref = "victools" }
+
+[bundles]
+testcontainers = ["testcontainers-junit-jupiter", "testcontainers-postgresql"]
+victools = ["victools-generator", "victools-jackson", "victools-jakarta-validation"]
