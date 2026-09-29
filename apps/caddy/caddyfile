@@ -17,7 +17,9 @@
         path /api/openapi /api/openapi/* /api/actuator /api/actuator/*
         not path /api/actuator/health/readiness
     }
-    respond @internal 404
+    handle @internal {
+        respond 404
+    }
 
     handle_path /api/* {
         reverse_proxy server:3001 {

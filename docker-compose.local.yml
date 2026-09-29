@@ -1,0 +1,18 @@
+# Run the production stack locally on http://localhost:8080 without TLS.
+# Usage: just prod-local
+services:
+  server:
+    # Microsoft redirects straight to the backend because the Entra app has
+    # http://localhost:3001/login/oauth2/code/microsoft registered. Browsers
+    # share localhost cookies across ports, so the session carries over to 8080.
+    ports:
+      - "3001:3001"
+    environment:
+      FRONTEND_URL: http://localhost:8080
+      MICROSOFT_REDIRECT_URI: http://localhost:3001/login/oauth2/code/microsoft
+      SESSION_COOKIE_SECURE: "false"
+
+  caddy:
+    environment:
+      # The http:// prefix makes Caddy serve plain HTTP on container port 80.
+      DOMAIN: http://localhost

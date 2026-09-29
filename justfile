@@ -1,5 +1,8 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
+# Docker Compose on servers, podman-compose where Docker is not installed.
+compose := `command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman-compose"`
+
 default:
     @just --list
 
@@ -78,19 +81,23 @@ stop-all:
 
 # Build and start the production stack (configure .env first).
 prod-up:
-    docker compose up -d --build
+    {{compose}} up -d --build
+
+# Run the production stack locally on http://localhost:8080 (no TLS).
+prod-local:
+    HTTP_PORT=8080 HTTPS_PORT=8443 {{compose}} -f docker-compose.yml -f docker-compose.local.yml up -d --build
 
 # Stop the production stack and preserve its volumes.
 prod-down:
-    docker compose down
+    {{compose}} down
 
 # Show production container status.
 prod-ps:
-    docker compose ps
+    {{compose}} ps
 
 # Follow production logs.
 prod-logs:
-    docker compose logs -f --tail=200
+    {{compose}} logs -f --tail=200
 
 # Smoke-test a deployment, e.g. `just prod-smoke https://quiz.example.com`.
 prod-smoke url *flags:
