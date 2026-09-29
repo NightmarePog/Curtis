@@ -2,6 +2,9 @@ package com.sosehl.curtis.config;
 
 import com.sosehl.curtis.platform.security.infrastructure.EntraOidcUserService;
 import com.sosehl.curtis.shared.errors.ProblemException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,12 +23,14 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Bean
     SecurityFilterChain securityFilterChain(
         HttpSecurity http,
         EntraOidcUserService oidcUserService,
-        @Qualifier("handlerExceptionResolver") HandlerExceptionResolver problems
+        @Qualifier("handlerExceptionResolver") HandlerExceptionResolver problems,
+        @Value("${app.frontend-url:http://localhost:3000}") String frontendUrl
     ) throws Exception {
         CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrfRepository.setCookiePath("/");
@@ -61,7 +66,11 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 ->
                 oauth2
-                    .defaultSuccessUrl("/dashboard", true)
+                    .defaultSuccessUrl(frontendUrl + "/dashboard", true)
+                    .failureHandler((request, response, exception) -> {
+                        LOGGER.error("Microsoft OAuth login failed", exception);
+                        response.sendRedirect(frontendUrl + "/login?error=oauth");
+                    })
                     .userInfoEndpoint(userInfo ->
                         userInfo.oidcUserService(oidcUserService)
                     )

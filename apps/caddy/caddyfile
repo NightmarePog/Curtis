@@ -1,4 +1,24 @@
-:80 {
+# DOMAIN comes from the root .env. A public domain gets a Let's Encrypt
+# certificate automatically; "localhost" gets a locally trusted self-signed one.
+{$DOMAIN} {
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+
+    # Keep API docs and actuator internals off the public internet; only the
+    # readiness probe stays reachable for uptime checks.
+    @internal {
+        path /api/openapi /api/openapi/* /api/actuator /api/actuator/*
+        not path /api/actuator/health/readiness
+    }
+    respond @internal 404
+
     handle_path /api/* {
         reverse_proxy server:3001 {
             # Forward SSE invalidations immediately instead of buffering them.

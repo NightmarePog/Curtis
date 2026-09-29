@@ -19,6 +19,12 @@ set -a
 source "$ROOT/apps/server/.env"
 set +a
 
+# The container deployment uses /data, but the local JVM runs directly on the
+# host and needs writable paths. Keep existing user-provided values unchanged.
+export QUIZ_IMPORT_ROOT="${QUIZ_IMPORT_ROOT:-/tmp/curtis-import}"
+export MEDIA_ROOT="${MEDIA_ROOT:-/tmp/curtis-media}"
+mkdir -p "$QUIZ_IMPORT_ROOT" "$MEDIA_ROOT"
+
 echo "🚀 Starting backend…"
 (cd "$ROOT/apps/server" && ./gradlew bootRun --console=plain) > "$LOG_DIR/backend.log" 2>&1 &
 write_pid backend "$!"

@@ -75,3 +75,27 @@ stop:
 # Stop the dev servers and PostgreSQL.
 stop-all:
     scripts/stop.sh --all
+
+# Build and start the production stack (configure .env first).
+prod-up:
+    docker compose up -d --build
+
+# Stop the production stack and preserve its volumes.
+prod-down:
+    docker compose down
+
+# Show production container status.
+prod-ps:
+    docker compose ps
+
+# Follow production logs.
+prod-logs:
+    docker compose logs -f --tail=200
+
+# Smoke-test a deployment, e.g. `just prod-smoke https://quiz.example.com`.
+prod-smoke url *flags:
+    scripts/prod-smoke.sh {{url}} {{flags}}
+
+# Dump the production database to backups/.
+prod-backup:
+    scripts/prod-backup.sh
